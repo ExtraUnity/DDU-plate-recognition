@@ -4,6 +4,7 @@ class LicencePlate{
   
   PImage platePicture;
   PImage carPicture;
+  PImage[] segmentedCharacters;
   
   String realPlate;
   
