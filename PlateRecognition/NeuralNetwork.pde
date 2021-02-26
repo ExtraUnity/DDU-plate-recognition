@@ -76,25 +76,6 @@ static class NeuralNetwork implements Serializable {
   }
   
 
-  double[] createLabels(int i, int size) {
-    double[] tempLabels = new double[size];
-    for (int j = 0; j<size; j++) {
-      tempLabels[j] = i==j ? 1 : 0;
-    }
-    return tempLabels;
-  }
-  
-  double[] createLabels(char c, int size) {
-    int i = (int) c;
-    i -=65;
-    double[] tempLabels = new double[size];
-    for (int j = 0; j<size; j++) {
-      tempLabels[j] = i==j ? 1 : 0;
-    }
-    return tempLabels;
-  }
-  
-
   double meanSquaredError(double[] input, double[] target) {
     feedForward(input);
     double v = 0;
