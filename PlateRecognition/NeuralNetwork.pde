@@ -47,7 +47,7 @@ static class NeuralNetwork implements Serializable {
           sum += activation[l-1][k] * weights[l][j][k]; //activation of previous neuron times weights from previous to current neuron
         }
 
-        this.activation[l][j] = sigmoid(sum);
+        this.activation[l][j] = sigmoid(sum); //ReLU or sigmoid can be used here.
       }
     }
     return this.activation[NETWORK_SIZE-1];
@@ -70,6 +70,30 @@ static class NeuralNetwork implements Serializable {
       update(learningRate);
     }
   }
+  
+  void train(double[] input, int target, double learningRate) {
+     train(input, createLabels(target, 10), learningRate);
+  }
+  
+
+  double[] createLabels(int i, int size) {
+    double[] tempLabels = new double[size];
+    for (int j = 0; j<size; j++) {
+      tempLabels[j] = i==j ? 1 : 0;
+    }
+    return tempLabels;
+  }
+  
+  double[] createLabels(char c, int size) {
+    int i = (int) c;
+    i -=65;
+    double[] tempLabels = new double[size];
+    for (int j = 0; j<size; j++) {
+      tempLabels[j] = i==j ? 1 : 0;
+    }
+    return tempLabels;
+  }
+  
 
   double meanSquaredError(double[] input, double[] target) {
     feedForward(input);
@@ -122,6 +146,10 @@ static class NeuralNetwork implements Serializable {
     return 1d/(1+Math.exp(-num));
   }
 
+  double ReLU(double num) {
+    return Math.max(0, num);
+  }
+
   double[] createRandomArray(int size, double lower, double upper) {
     double[] array = new double[size];
     for (int i = 0; i<size; i++) {
@@ -148,11 +176,18 @@ static class NeuralNetwork implements Serializable {
   }
 
   static NeuralNetwork loadNetwork(String file) throws IOException, ClassNotFoundException {
-
     File f = new File(file);
     ObjectInputStream in = new ObjectInputStream(new FileInputStream(f));
     NeuralNetwork network = (NeuralNetwork) in.readObject();
     in.close();
     return network;
+  }
+
+  int getIndexOfLargest(double[] a) {
+    int indexMax = 0;
+    for (int i = 0; i<a.length; i++) {
+      indexMax = a[i] > a[indexMax] ? i : indexMax;
+    }
+    return indexMax;
   }
 }
