@@ -56,4 +56,14 @@ static class Segmentation {
    
     return output;
   }
+  
+  
+  static PImage blobColor(PImage plate){
+    
+    
+    
+    return null; 
+  }
+  
+  
 }
