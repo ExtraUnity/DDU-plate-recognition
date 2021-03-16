@@ -6,27 +6,37 @@ DataSet testingLettersSet;
 DataSet trainingDigitsSet;
 DataSet testingDigitsSet;
 void setup() {
+  size(700, 400);
   //println(useNeuralNetwork("5.jpg"));
   try {
-    letterNet = new NeuralNetwork(784, 600, 400, 200, 27);
-    numberNet = new NeuralNetwork(784, 300, 100, 10);
+    //letterNet = new NeuralNetwork(784, 600, 400, 200, 27);
+    //numberNet = new NeuralNetwork(784, 300, 100, 10);
     /*
     trainingDigitsSet = createTrainingSet(0, 60000, 784, 10, "emnist-digits-train-images.idx3-ubyte", "emnist-digits-train-labels.idx3-ubyte");
     trainData(50, 50, 1200, "numberNet");
      */
 
-    trainingLettersSet = createTrainingSet(0, 60000, 784, 27, "emnist-letters-train-images.idx3-ubyte", "emnist-letters-train-labels.idx3-ubyte"); //60000 is the number of letters. change this maybe
-    trainData(50, 50, 1200, "letterNet.txt", trainingLettersSet, letterNet);
+    //trainingLettersSet = createTrainingSet(0, 60000, 784, 27, "emnist-letters-train-images.idx3-ubyte", "emnist-letters-train-labels.idx3-ubyte"); //60000 is the number of letters. change this maybe
+    //trainData(50, 50, 1200, "letterNet.txt", trainingLettersSet, letterNet);
 
-    //String path = dataPath("");
+    String path = dataPath("");
     //println(path);
     //numberNet = NeuralNetwork.loadNetwork(path + "\\saves\\network.txt");
     //testingDigitsSet = createTestSet(0, 10000);
     //testData();
+    
+    PImage test = loadImage(path+"\\AFprime.jpg" );
+    
+    
+    
+    Segmentation.plateSegmentation(test, this);
+    
   } 
   catch(Exception e) {
     println(e);
   }
+  println("End");
+  noLoop();
 }
 
 void draw() {
