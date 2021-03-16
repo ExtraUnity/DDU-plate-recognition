@@ -1,0 +1,102 @@
+static class ImageUtils {
+  
+  static PImage cropBorders(PImage img, PApplet main) {
+  int upperBound = -1, lowerBound = -1, rightBound = -1, leftBound = -1;
+upper: 
+  for (int y = 0; y<img.height; y++) {
+    for (int x = 0; x<img.width; x++) {
+      //println(255-brightness(img.get(x, y)), 0);
+      if (main.brightness(img.pixels[y*img.width+x]) != 0) {
+        upperBound = y;
+        break upper;
+      }
+    }
+  }
+
+lower: 
+  for (int y = img.height-1; y>=0; y--) {
+    for (int x = 0; x<img.width; x++) {
+      if (main.brightness(img.pixels[y*img.width+x]) != 0) {
+        lowerBound = y;
+        break lower;
+      }
+    }
+  }
+
+left: 
+  for (int x = 0; x<img.width; x++) {
+    for (int y = 0; y<img.height; y++) {
+      if (main.brightness(img.pixels[y*img.width+x]) != 0) {
+        leftBound = x;
+        break left;
+      }
+    }
+  }
+
+right: 
+  for (int x = img.width-1; x>=0; x--) {
+    for (int y = 0; y<img.height; y++) {
+      if (main.brightness(img.pixels[y*img.width+x]) != 0) {
+        rightBound = x;
+        break right;
+      }
+    }
+  }
+
+  return img.get(leftBound, upperBound, rightBound-leftBound, lowerBound-upperBound);
+}
+
+static PImage fitInto(PImage img, int newWidth, int newHeight, int backgroundColor, PApplet main) {
+  float sourceAspectRatio = (float)img.width / (float) img.height;
+  float resultAspectRatio = (float) newWidth / (float) newHeight;
+  float newImgWidth, newImgHeight;
+
+  if (resultAspectRatio > sourceAspectRatio) {
+    //Use heights
+    newImgHeight = newHeight;
+    newImgWidth = (newImgHeight / img.height) * img.width;
+  } else {
+    //Use widths
+    newImgWidth = newWidth;
+    newImgHeight = (newImgWidth / img.width) * img.height;
+  }
+
+  PImage scaledImg = img.copy();
+  scaledImg.resize((int)newImgWidth, (int)newImgHeight);
+
+  PImage newImg = main.createImage(newWidth, newHeight, ARGB);
+  
+  for (int i = 0; i<newImg.pixels.length; i++) {
+    newImg.pixels[i] = backgroundColor;
+  }
+  newImg.copy(scaledImg, 0, 0, (int)scaledImg.width, (int)scaledImg.height, (int)(newImg.width/2)-(int)(newImgWidth/2), (int)(newImg.height/2)-(int)(newImgHeight/2), (int)scaledImg.width, (int)scaledImg.height);
+
+  return newImg;
+}
+
+static PImage centerWithMassInto(PImage source, int imgWidth, int imgHeight, int backgroundColor, PApplet main) {
+  PImage result = main.createImage(imgWidth, imgHeight, ARGB);
+  for (int i = 0; i<result.pixels.length; i++) {
+    result.pixels[i] = backgroundColor;
+  }
+  int[] centerOfMass = computeCenterOfMass(source, main);
+  result.copy(source, 0, 0, source.width, source.height, round(result.width/2f)-centerOfMass[0], round(result.height/2f)-centerOfMass[1], source.width, source.height);
+  return result;
+}
+
+static int[] computeCenterOfMass(PImage img, PApplet main) {
+  long xSum = 0;
+  long ySum = 0;
+  long num = 0;
+
+  for (int x = 0; x < img.width; x++) {
+    for (int y = 0; y < img.height; y++) {
+      int weight = (int)main.red(img.pixels[y*img.width+x]);
+      xSum += x * weight;
+      ySum += y * weight;
+      num += weight;
+    }
+  }
+  return new int[] {(int)((double) xSum / num), (int)((double)ySum / num)};
+}
+}
