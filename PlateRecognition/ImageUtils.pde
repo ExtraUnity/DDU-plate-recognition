@@ -5,7 +5,6 @@ static class ImageUtils {
   upper: 
     for (int y = 0; y<img.height; y++) {
       for (int x = 0; x<img.width; x++) {
-        //println(255-brightness(img.get(x, y)), 0);
         if (main.brightness(img.pixels[y*img.width+x]) != 0) {
           upperBound = y;
           break upper;
@@ -69,7 +68,6 @@ static class ImageUtils {
     }
 
     PImage scaledImg = img.copy();
-    //println(newImgWidth, newImgHeight);
     scaledImg.resize((int)newImgWidth, (int)newImgHeight);
 
     PImage newImg = main.createImage(newWidth, newHeight, ARGB);
