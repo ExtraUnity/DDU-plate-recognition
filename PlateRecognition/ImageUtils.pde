@@ -105,4 +105,35 @@ static class ImageUtils {
     }
     return new int[] {(int)((double) xSum / num), (int)((double)ySum / num)};
   }
+
+
+  static float medianBrightness(PImage _image) {
+    _image.filter(GRAY);
+    int[] brightnesses = new int[_image.pixels.length];
+    for (int i = 0; i < brightnesses.length; i++) {
+      brightnesses[i] = _image.pixels[i] >> 16 & 0xFF;
+    }
+    sort(brightnesses);
+    return brightnesses[brightnesses.length/2]/255.0;
+  }
+  
+  static float averageBrightness(PImage _image) {
+    _image.filter(GRAY);
+    float sum = 0;
+    for (int i = 0; i < _image.pixels.length; i++) {
+      sum += _image.pixels[i] >> 16 & 0xFF;
+    }
+    
+    return sum/_image.pixels.length/255.0;
+  }  
+  
+  
+  
+  static void ContrastExtension(PImage image){
+    
+    
+  }
+  
+  
+  
 }
