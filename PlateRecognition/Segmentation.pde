@@ -1,19 +1,10 @@
 static class Segmentation {
+
+
   static ArrayList <PImage> plateSegmentation(PImage plate, PApplet outer) {
-    return plateSegmentation(plate, 0.5, outer);
-  }
-
-  static ArrayList <PImage> plateSegmentation(PImage plate, float threshold, PApplet outer) {
-
     // based on Koo et al, 2009
-    plate.resize(700, 0);
-    plate.filter(GRAY);
-    plate.filter(BLUR, 0.5);
-    ImageUtils.contrastExtension(plate,outer);
-    plate.filter(THRESHOLD, ImageUtils.averageBrightness(plate)); // find the average intensity to filter dynamicly insted of taking a static value
-    plate = ImageUtils.cropBorders(plate, outer);
-    plate = ImageUtils.filterImageByMedian(plate, outer);
-    plate.resize(527, 219);
+
+    plate = preprossing(plate, outer);
 
     color[] pix = plate.pixels;
     float[] colVal = new float[plate.width];
@@ -75,7 +66,7 @@ static class Segmentation {
 
     ArrayList<Integer> whiteSpace = new ArrayList<Integer>();
     for (int i = 0; i<colVal.length; i++) {
-      if (colVal[i] >= 0.85) { // this number controlls how many percent of the collumn that must be white for it to be considered a empty line
+      if (colVal[i] >= 0.9) { // this number controlls how many percent of the collumn that must be white for it to be considered a empty line
         whiteSpace.add(i); 
         outer.stroke(#ff0000);
         //outer.line(i, 0, i, outer.height);
@@ -87,9 +78,10 @@ static class Segmentation {
       if (whiteSpace.get(i+1) - whiteSpace.get(i) >1 || whiteSpace.get(i) - whiteSpace.get(i-1) >1) {
         breakpoints.add(whiteSpace.get(i));
         outer.stroke(#00ff00);
-        outer.line(whiteSpace.get(i), 0, whiteSpace.get(i), outer.height);
+        //outer.line(whiteSpace.get(i), 0, whiteSpace.get(i), outer.height);
       }
     }
+
 
     ArrayList <PImage> output = new ArrayList <PImage>();
 
@@ -109,7 +101,24 @@ static class Segmentation {
     return output;
   }
 
-  static PImage blobColor(PImage plate) {
+  static PImage preprossing(PImage plate, PApplet outer) {
+    plate.resize(700, 0);
+    plate.filter(GRAY);
+    plate.filter(BLUR, 0.5);
+    //plate = ImageUtils.contrastExtension(plate,outer);
+    plate = ImageUtils.filterImageByMedian(plate, outer);
+    plate.resize(plate.width+1, plate.height+1);
+    plate.filter(THRESHOLD, 1-ImageUtils.averageBrightness(plate)); // find the average intensity to filter dynamicly insted of taking a static value
+    plate = ImageUtils.cropBorders(plate, outer);
+    return plate;
+  }
+
+
+  static ArrayList <PImage> blobSegmentation(PImage plate, PApplet outer) {
+    plate = preprossing(plate, outer);
+    
+    
+    
     return null;
   }
 
