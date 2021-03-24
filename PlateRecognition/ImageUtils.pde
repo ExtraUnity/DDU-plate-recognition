@@ -121,20 +121,19 @@ static class ImageUtils {
         }
 
         newImg.pixels[(startY)*newImg.width+(startX)] = main.alphaToPixel(median(imgMatrix));
-
       }
     }
     //img.filter(INVERT);
     newImg.filter(INVERT);
     return newImg;
   }
-  
+
   static int median(int[] array) {
-    
+
     array = sort(array);
     return array[array.length/2];
   }
-  
+
 
   static float medianBrightness(PImage _image) {
     _image.filter(GRAY);
@@ -156,28 +155,59 @@ static class ImageUtils {
     return sum/_image.pixels.length/255.0;
   }
 
-  static void contrastExtension(PImage image, PApplet outer) {
+  static PImage contrastExtension(PImage out, PApplet outer) {
     //  the contrast extension makes the image sharper
     /*
-    Find the sum of the histogram values.
+     Find the sum of the histogram values.
      Normalize these values dividing by the total number of pixels. 
-     Multiply these normalized values by the maximum gray-level value.
+     Multiply these normalized values by the maximum gray-level value (in the picture).
      Map the new gray level values
      */
-    image.filter(GRAY);
 
-    float sum = 0; 
-    for (color c : image.pixels) sum += outer.red(c);
+    out.filter(GRAY);
+    float[] valueFrequency = new float[256];
 
-    float normalized = sum / (float) image.pixels.length/255; // creates a floating number between  0 and 255
-
-    for (int i = 0; i< image.pixels.length; i++) {
-      image.pixels[i] = myColor((int)(outer.red(image.pixels[i]) * normalized)); 
+    for (color c : out.pixels) {
+      valueFrequency[(int)outer.red(c)]++;
     }
+
+    float[] cumulative  = new float[256];
+    cumulative[0] = valueFrequency[0]/out.pixels.length;
+
+    for (int i = 1; i< cumulative.length; i++) {
+      cumulative[i] = cumulative[i-1] + valueFrequency[i]/out.pixels.length;
+    }
+    for (int i = 0; i<out.pixels.length; i++) {
+      out.pixels[i] = main.alphaToPixel(floor(255 * cumulative[(int)outer.red(out.pixels[i])]));
+    }
+
+    float[] valueFrequencyPost = new float[256];
+
+    for (color c : out.pixels) {
+      valueFrequencyPost[(int)outer.red(c)]++;
+    }
+
+    float[] cumulativePost = new float[256];
+    cumulativePost[0] = valueFrequencyPost[0]/out.pixels.length;
+    for (int i = 1; i< cumulativePost.length; i++) {
+      cumulativePost[i] = cumulativePost[i-1] + valueFrequencyPost[i]/out.pixels.length;
+    }
+    float mostCommon = main.getIndexOfLargest(valueFrequencyPost);
+    println(mostCommon);
+
+    //for (int i = 0; i<256; i++) {
+    //  outer.stroke(main.alphaToPixel(255));
+    //  outer.strokeWeight(3);  
+    //  outer.point(i, 400-(cumulativePost[i])*400);
+    //  outer.stroke(main.alphaToPixel(0));
+    //  outer.point(i, 400-(valueFrequencyPost[i])/12);
+    //}
+
+    return out;
   }
 
+
   static int myColor(int grayscale) { // converts a single grayscale value to the color dataformat in processing.
-  
     String binary = String.format("%8s", Integer.toBinaryString(grayscale)).replace(' ', '0');
     String binaryCombined = ("11111111"+binary+binary+binary);
     return Integer.parseUnsignedInt(binaryCombined, 2);
