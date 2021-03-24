@@ -6,6 +6,8 @@ DataSet trainingLettersSet;
 DataSet testingLettersSet;
 DataSet trainingDigitsSet;
 DataSet testingDigitsSet;
+static PApplet p = new PApplet();
+
 ArrayList<PVector> points;
 double[] drawNum;
 
@@ -13,10 +15,11 @@ int debugCounter = 0;
 
 void setup() {
     size(700, 700);
-    background(0);
+    //background(0);
     String path = dataPath("");
-  
-  try {
+    ImageUtils.main = this;
+    
+  //try {
     //letterNet = new NeuralNetwork(784, 600, 400, 200, 27);
     //numberNet = new NeuralNetwork(784, 300, 100, 10);
     /*
@@ -33,10 +36,10 @@ void setup() {
     //  strokeWeight(5);
     //  String path = dataPath("");
     //  try {
-        letterNet = NeuralNetwork.loadNetwork(path + "\\networks\\letterNet.txt");
+       // letterNet = NeuralNetwork.loadNetwork(path + "\\networks\\letterNet.txt");
     //    println(letterNet.LAYER_SIZES);
 
-        numberNet = NeuralNetwork.loadNetwork(path + "\\networks\\numberNet.txt");
+        //numberNet = NeuralNetwork.loadNetwork(path + "\\networks\\numberNet.txt");
     //println(useNeuralNetwork("eight.jpg"));
 
     //numberNet = new NeuralNetwork(784, 300, 100, 10);
@@ -58,18 +61,18 @@ void setup() {
     //testData();
 
     //PImage test = loadImage(path+"\\AK.jpg" );
-    PImage test = loadImage(path+"\\AFprime.jpg" );
+    PImage test = loadImage(path+"\\FB.jpg" );
 
-    
+    //image(test,0,0);
     ArrayList <PImage> images = Segmentation.plateSegmentation(test, this);
-    
-    int temp = useNeuralNetwork(images.get(images.size()-1), numberNet);
-    println(temp);
+    println(images.size());
+    //int temp = useNeuralNetwork(images.get(images.size()-1), numberNet);
+    //println(temp);
     
     //image(images.get(images.size()-1), 0, 0);
     //image(images.get(images.size()-1), 100,0);
     
-    //String readPlate = recognizeImages(images, numberNet, letterNet);
+   //String readPlate = recognizeImages(images, numberNet, letterNet);
     
     
     //background(0);
@@ -82,10 +85,10 @@ void setup() {
 
     //testData(letterNet,testingLettersSet);
       
-  }
-  catch(Exception e) {
-    println(e);
-  }
+  //}
+  //catch(Exception e) {
+  //  println(e);
+  //}
 
   //println(useNeuralNetwork(path+"\\five.jpg", numberNet));
   //println(useNeuralNetwork(path+"\\four.jpg", numberNet));
@@ -347,4 +350,8 @@ String recognizeImages(ArrayList <PImage> images , NeuralNetwork numberNet, Neur
     }
   }
   return outputs;
+}
+
+int alphaToPixel(int gray) {
+  return color(gray);
 }
