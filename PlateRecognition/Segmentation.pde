@@ -116,11 +116,50 @@ static class Segmentation {
 
   static ArrayList <PImage> blobSegmentation(PImage plate, PApplet outer) {
     plate = preprossing(plate, outer);
-    
-    
-    
+    outer.image(plate, 0, 0);
+
+    class Pixel {
+      int col; // the grayscale value from 0 to 255
+      int label;
+      Pixel(int _col, int _label) {
+        this.col = _col;
+        this.label = _label;
+      }
+      boolean isBlack() {
+        return col == 0;
+      }
+    }
+    Pixel[] pix = new Pixel[plate.pixels.length];
+    for (int i = 0; i<pix.length; i++) {
+      pix[i] = new Pixel((int)outer.red(plate.pixels[i]), 0);
+    }
+
+    LinkedList<Integer> queue = new LinkedList<Integer>();
+
+    int currentLabel = 1; 
+    pix[0].label = 1;
+    for (int i = 0; i<pix.length; i++) {
+      if (pix[i].isBlack() && pix[i].label == 0) {
+        pix[i].label = currentLabel;
+        queue.add(i, 0);
+        while (queue.size()>0) {
+          int index = queue.pop(); // return the element and removes it from the list
+
+          for (int j = i>plate.width ? -plate.width: 0; j<= (i<pix.length-plate.width ? plate.width: 0); j+= plate.width) { // this is not horror :)
+            for (int k = i%plate.width >0 ? -1: 0; k<= (i%plate.width < plate.width-1 ? 1: 0 ); k++) {
+              if (pix[index+j+k].isBlack()&& pix[index+j+k].label == 0) {
+                pix[index+j+k].label = currentLabel;
+                queue.add(index+j+k, 0);
+              }
+            }
+          }
+        }
+      }
+    }
     return null;
   }
+
+
 
   static int[] findSmallestLength(int[][] breaks, int start, int stop, int _height) {
     int max = _height, min = 0;
