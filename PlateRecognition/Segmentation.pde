@@ -4,6 +4,7 @@ static class Segmentation {
     plate.resize(700, 0);
     plate.filter(GRAY);
     plate.filter(BLUR, 0.5);
+    ImageUtils.contrastExtension(plate,outer);
     plate.filter(THRESHOLD, ImageUtils.averageBrightness(plate)); // find the average intensity to filter dynamicly insted of taking a static value
     plate = ImageUtils.cropBorders(plate, outer);
     color[] pix = plate.pixels;
@@ -55,7 +56,7 @@ static class Segmentation {
       if (whiteSpace.get(i+1) - whiteSpace.get(i) >1 || whiteSpace.get(i) - whiteSpace.get(i-1) >1) {
         breakpoints.add(whiteSpace.get(i));
         outer.stroke(#00ff00);
-        //outer.line(whiteSpace.get(i), 0, whiteSpace.get(i), outer.height);
+        outer.line(whiteSpace.get(i), 0, whiteSpace.get(i), outer.height);
       }
     }
 
