@@ -1,5 +1,4 @@
- //<>// //<>// //<>// //<>// //<>//
-import java.io.*;
+import java.io.*; //<>//
 NeuralNetwork numberNet;
 NeuralNetwork letterNet;
 DataSet trainingLettersSet;
@@ -33,13 +32,11 @@ void setup() {
      testData(letterNet, testingLettersSet);
      */
 
-
     letterNet = NeuralNetwork.loadNetwork(path + "\\networks\\letterNet.txt");
     numberNet = NeuralNetwork.loadNetwork(path + "\\networks\\numberNet.txt");
 
     PImage test = loadImage(path+"\\AK.jpg");
     ArrayList <PImage> images = Segmentation.plateSegmentation(test, this);
-
     //PImage testTwo = Segmentation.blobColor(test,this, ? );
 
 
