@@ -5,16 +5,18 @@ DataSet trainingLettersSet;
 DataSet testingLettersSet;
 DataSet trainingDigitsSet;
 DataSet testingDigitsSet;
+static PApplet p = new PApplet();
+
 ArrayList<PVector> points;
 double[] drawNum;
 
 int debugCounter = 0; 
 
 void setup() {
-  size(700, 700);
-  background(0);
-  String path = dataPath("");
-
+    size(700, 700);
+    //background(0);
+    String path = dataPath("");
+    ImageUtils.main = this;
   try {
     /*
     letterNet = new NeuralNetwork(784, 600, 400, 200, 27);
@@ -37,8 +39,6 @@ void setup() {
 
     PImage test = loadImage(path+"\\AK.jpg");
     ArrayList <PImage> images = Segmentation.plateSegmentation(test, this);
-    //PImage testTwo = Segmentation.blobColor(test,this, ? );
-
 
     String readPlate = recognizeImages(images, numberNet, letterNet);
     println(readPlate);
@@ -55,6 +55,7 @@ void setup() {
   catch(Exception e) {
     println(e);
   }
+
 
   noLoop();
 }
@@ -242,4 +243,8 @@ String recognizeImages(ArrayList <PImage> images, NeuralNetwork numberNet, Neura
     }
   }
   return outputs;
+}
+
+int alphaToPixel(int gray) {
+  return color(gray);
 }

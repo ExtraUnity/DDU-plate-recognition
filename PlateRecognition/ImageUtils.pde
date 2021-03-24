@@ -1,5 +1,5 @@
 static class ImageUtils {
-
+  static PlateRecognition main;
   static PImage cropBorders(PImage img, PApplet main) {
     int upperBound = 0, lowerBound = 0, rightBound = 0, leftBound = 0;
   upper: 
@@ -106,6 +106,35 @@ static class ImageUtils {
     return new int[] {(int)((double) xSum / num), (int)((double)ySum / num)};
   }
 
+
+  static PImage filterImageByMedian(PImage img, PApplet outer) {
+    img.filter(INVERT);
+    PImage newImg = outer.createImage(img.width-1, img.height-1, ARGB);
+
+    for (int startY = 1; startY<newImg.height; startY++) {
+      for (int startX = 1; startX<newImg.width; startX++) {
+        int[] imgMatrix = new int[9];
+        for (int matrixY = 0; matrixY<3; matrixY++) {
+          for (int matrixX = 0; matrixX<3; matrixX++) {
+            imgMatrix[(matrixY)*3+(matrixX)] = (int)outer.red(img.pixels[(startY+matrixY-1)*img.width+(startX+matrixX-1)]);
+          }
+        }
+
+        newImg.pixels[(startY)*newImg.width+(startX)] = main.alphaToPixel(median(imgMatrix));
+
+      }
+    }
+    //img.filter(INVERT);
+    newImg.filter(INVERT);
+    return newImg;
+  }
+  
+  static int median(int[] array) {
+    
+    array = sort(array);
+    return array[array.length/2];
+  }
+  
 
   static float medianBrightness(PImage _image) {
     _image.filter(GRAY);
