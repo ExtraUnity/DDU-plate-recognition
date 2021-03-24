@@ -5,7 +5,6 @@ static class ImageUtils {
   upper: 
     for (int y = 0; y<img.height; y++) {
       for (int x = 0; x<img.width; x++) {
-        //println(255-brightness(img.get(x, y)), 0);
         if (main.brightness(img.pixels[y*img.width+x]) != 0) {
           upperBound = y;
           break upper;
@@ -69,7 +68,6 @@ static class ImageUtils {
     }
 
     PImage scaledImg = img.copy();
-    //println(newImgWidth, newImgHeight);
     scaledImg.resize((int)newImgWidth, (int)newImgHeight);
 
     PImage newImg = main.createImage(newWidth, newHeight, ARGB);
@@ -108,6 +106,7 @@ static class ImageUtils {
     return new int[] {(int)((double) xSum / num), (int)((double)ySum / num)};
   }
 
+
   static PImage filterImageByMedian(PImage img, PApplet outer) {
     img.filter(INVERT);
     PImage newImg = outer.createImage(img.width-1, img.height-1, ARGB);
@@ -136,5 +135,52 @@ static class ImageUtils {
     return array[array.length/2];
   }
   
-  
+
+  static float medianBrightness(PImage _image) {
+    _image.filter(GRAY);
+    int[] brightnesses = new int[_image.pixels.length];
+    for (int i = 0; i < brightnesses.length; i++) {
+      brightnesses[i] = _image.pixels[i] >> 16 & 0xFF;
+    }
+    sort(brightnesses);
+    return brightnesses[brightnesses.length/2]/255.0;
+  }
+
+  static float averageBrightness(PImage _image) {
+    _image.filter(GRAY);
+    float sum = 0;
+    for (int i = 0; i < _image.pixels.length; i++) {
+      sum += _image.pixels[i] >> 16 & 0xFF;
+    }
+
+    return sum/_image.pixels.length/255.0;
+  }
+
+  static void contrastExtension(PImage image, PApplet outer) {
+    //  the contrast extension makes the image sharpen
+    /*
+    Find the sum of the histogram values.
+     Normalize these values dividing by the total number of pixels. 
+     Multiply these normalized values by the maximum gray-level value.
+     Map the new gray level values
+     */
+    image.filter(GRAY);
+
+    float sum = 0; 
+    for (color c : image.pixels) sum += outer.red(c);
+
+    float normalized = sum / (float) image.pixels.length; // creates a floating number between 0 and 1
+
+    normalized *=255; // creates a floating number between 0 and 255
+
+    for (int i = 0; i< image.pixels.length; i++) {
+      //image.pixels[i] = color(outer.red(image.pixels[i]) * normalized); // TODO: change to better color function
+    }
+  }
+
+  static int myColor(int grayscale) { // converts a single grayscale value to the color dataformat in processing.
+    String binary = String.format("%8s", Integer.toBinaryString(grayscale)).replace(' ', '0');
+    String binaryCombined = ("11111111"+binary+binary+binary);
+    return Integer.parseUnsignedInt(binaryCombined, 2);
+  }
 }

@@ -1,5 +1,4 @@
-
-import java.io.*;
+import java.io.*; //<>//
 NeuralNetwork numberNet;
 NeuralNetwork letterNet;
 DataSet trainingLettersSet;
@@ -18,13 +17,21 @@ void setup() {
     //background(0);
     String path = dataPath("");
     ImageUtils.main = this;
-    
-  //try {
-    //letterNet = new NeuralNetwork(784, 600, 400, 200, 27);
-    //numberNet = new NeuralNetwork(784, 300, 100, 10);
+  try {
     /*
-    trainingDigitsSet = createTrainingSet(0, 60000, 784, 10, "emnist-digits-train-images.idx3-ubyte", "emnist-digits-train-labels.idx3-ubyte");
-     trainData(50, 50, 1200, "numberNet");
+    letterNet = new NeuralNetwork(784, 600, 400, 200, 27);
+     numberNet = new NeuralNetwork(784, 300, 100, 10);
+     
+     trainingDigitsSet = createTrainingSet(0, 60000, 784, 10, "emnist-digits-train-images.idx3-ubyte", "emnist-digits-train-labels.idx3-ubyte");
+     trainData(50, 50, 1200, "numberNet", trainingDigitsSet, numberNet);
+     trainingLettersSet = createTrainingSet(0, 60000, 784, 27, "emnist-letters-train-images.idx3-ubyte", "emnist-letters-train-labels.idx3-ubyte"); //60000 is the number of letters. change this maybe
+     trainData(50, 50, 1200, "letterNet", trainingLettersSet, letterNet);
+     
+     testingDigitsSet = createTestingSet(0, 40000, 784, 1, "emnist-digits-test-images.idx3-ubyte", "emnist-digits-test-labels.idx3-ubyte");
+     testData(numberNet, testingDigitsSet);
+     
+     testingLettersSet = createTestingSet(0, 14800, 784, 1, "emnist-letters-test-images.idx3-ubyte", "emnist-letters-test-labels.idx3-ubyte"); //60000 is the number of letters. change this maybe
+     testData(letterNet, testingLettersSet);
      */
 
     //trainingLettersSet = createTrainingSet(0, 60000, 784, 27, "emnist-letters-train-images.idx3-ubyte", "emnist-letters-train-labels.idx3-ubyte"); //60000 is the number of letters. change this maybe
@@ -42,30 +49,19 @@ void setup() {
         //numberNet = NeuralNetwork.loadNetwork(path + "\\networks\\numberNet.txt");
     //println(useNeuralNetwork("eight.jpg"));
 
-    //numberNet = new NeuralNetwork(784, 300, 100, 10);
-    //trainingDigitsSet = createTrainingSet(0, 240000, 784, 10, "emnist-digits-train-images.idx3-ubyte", "emnist-digits-train-labels.idx3-ubyte");
-    //trainData(50, 50, 4800, "numberNet.txt", trainingDigitsSet, numberNet);
+    letterNet = NeuralNetwork.loadNetwork(path + "\\networks\\letterNet.txt");
+    numberNet = NeuralNetwork.loadNetwork(path + "\\networks\\numberNet.txt");
 
-    //testingDigitsSet = createTestingSet(0, 40000, 784, 1, "emnist-digits-test-images.idx3-ubyte", "emnist-digits-test-labels.idx3-ubyte");
-    //testData(numberNet, testingDigitsSet);
+    PImage test = loadImage(path+"\\AK.jpg");
+    ArrayList <PImage> images = Segmentation.plateSegmentation(test, this);
 
-    //testingLettersSet = createTestingSet(0, 14800, 784, 1, "emnist-letters-test-images.idx3-ubyte", "emnist-letters-test-labels.idx3-ubyte"); //60000 is the number of letters. change this maybe
+    //PImage testTwo = Segmentation.blobColor(test,this, ? );
 
-    //trainData(50, 50, 1200, "letterNet.txt", trainingLettersSet, letterNet);
-
-    
-    //println(path);
-    //numberNet = NeuralNetwork.loadNetwork(path + "\\saves\\network.txt");
-    //testingDigitsSet = createTestSet(0, 10000);
-
-    //testData();
 
     //PImage test = loadImage(path+"\\AK.jpg" );
-    PImage test = loadImage(path+"\\FB.jpg" );
 
     //image(test,0,0);
-    ArrayList <PImage> images = Segmentation.plateSegmentation(test, this);
-    println(images.size());
+    
     //int temp = useNeuralNetwork(images.get(images.size()-1), numberNet);
     //println(temp);
     
@@ -89,118 +85,60 @@ void setup() {
   //catch(Exception e) {
   //  println(e);
   //}
+    String readPlate = recognizeImages(images, numberNet, letterNet);
+    println(readPlate);
 
-  //println(useNeuralNetwork(path+"\\five.jpg", numberNet));
-  //println(useNeuralNetwork(path+"\\four.jpg", numberNet));
-  //println(useNeuralNetwork(path+"\\one.jpg", numberNet));
-  //println(getCharForNumber(useNeuralNetwork(path+"\\b.jpg", letterNet)));
-  //println(getCharForNumber(useNeuralNetwork(path+"\\r.jpg", letterNet)));
-  //println(getCharForNumber(useNeuralNetwork(path+"\\e.jpg", letterNet)));
-  
-  println("End");
+    background(120);
+    for (int i = 0; i < images.size(); i++) {
+      image(images.get(i), i*100, 150);
+      fill(255);
+      textSize(26);
+      text(readPlate.charAt(i), i*100, 145);
+    }
+    //exportPicture(test, readPlate);
+  }
+  catch(Exception e) {
+    println(e);
+  }
+
+
   noLoop();
 }
 
-void draw() {
-  //if (mousePressed) {
-  //  if (points.size()>0) {
-  //    if (mouseX != points.get(points.size()-1).x && mouseY != points.get(points.size()-1).y) {
-  //      points.add(new PVector(mouseX, mouseY));
-  //      if (points.size()>=2) {
-  //        line(points.get(points.size()-2).x, points.get(points.size()-2).y, points.get(points.size()-1).x, points.get(points.size()-1).y);
-  //      }
-  //    }
-  //  } else {
-  //    points.add(new PVector(mouseX, mouseY));
-  //  }
-  //} else {
-  //  if (points.size()>=2) {
-  //    background(0);
-
-  //    translate(width/2, height/2);
-  //    scale(-1, 1);
-  //    rotate(-PI/2);
-  //    translate(-width/2, -height/2);
-
-  //    for (int i = 1; i<points.size(); i++) {
-  //      line(points.get(i-1).x, points.get(i-1).y, points.get(i).x, points.get(i).y);
-  //    }
-
-  //    //for (int i = 1; i<points.size(); i++) {
-  //    //  line(points.get(i-1).x, points.get(i-1).y, points.get(i).x, points.get(i).y);
-  //    //}
-
-  //    translate(width/2, height/2);
-  //    scale(-1, 1);
-  //    rotate(PI/2);
-  //    translate(-width/2, -height/2);
-
-  //    PImage img = new PImage();
-  //    img = createImage(200, 200, ALPHA);
-
-  //    loadPixels();
-  //    updatePixels();
-  //    for (int i = 0; i<pixels.length; i++) {
-  //      img.pixels[i] = pixels[i];
-  //    }
-
-  //    points.clear();
-
-
-
-  //    img = ImageUtils.cropBorders(img, this);  
-  //    img = ImageUtils.fitInto(img, 20, 20, color(0), this);
-  //    img = ImageUtils.centerWithMassInto(img, 28, 28, color(0), this);
-
-
-
-  //    background(0);
-  //    img.loadPixels();
-
-  //    drawNum = new double[img.pixels.length];
-  //    for (int i = 0; i<img.pixels.length; i++) {
-  //      drawNum[i] = (double)brightness(img.pixels[i]);
-  //    }
-  //    double[] confidences = numberNet.feedForward(drawNum);
-  //    println(getIndexOfLargest(confidences), confidences[getIndexOfLargest(confidences)]);
-  //    //background(0);
-  //  }
-  //}
+void exportPicture(PImage plate, String fileName) {
+  String path = dataPath("") + "\\exports\\"+fileName+".jpg";
+  plate.save(path);
 }
 
 
-int useNeuralNetwork(String path, NeuralNetwork network){
+int useNeuralNetwork(String path, NeuralNetwork network) {
   PImage img = loadImage(path);
   return useNeuralNetwork(img, network);
 }
 
 int useNeuralNetwork(PImage _img, NeuralNetwork network) {
   PImage img = _img.get();
-  //PImage img = loadImage(path);
+
 
   /*
-this might become part of another step
+  this might become part of another step
    */
   img.filter(GRAY);
   img.filter(THRESHOLD, 0.5);
-  //img.resize(width,height);
   img.filter(INVERT);
-  img.resize(width,height);
+  img.resize(width, height);
 
   /*
   Preprocess image to look like the ones from EMNIST database
    */
-   
-  //image(img, debugCounter*75, 0);
-  //debugCounter++;
-   
+
+  // The images must be drawn on the screeen if they are to be rotated and flipped
   translate(width/2, height/2);
   rotate(-PI/2);
   scale(-1, 1);
   translate(-width/2, -height/2);
-  
-  //background(0);
-  image(img, 0, 0); //<>//
+
+  image(img, 0, 0);
 
   translate(width/2, height/2);
   scale(-1, 1);
@@ -211,13 +149,13 @@ this might become part of another step
   background(0);
 
   img = createImage(width, height, ALPHA);
-  img.pixels = pixels; //<>//
-  img = ImageUtils.cropBorders(img, this);  //<>//
-  img = ImageUtils.fitInto(img, 20, 20, color(0), this); //<>//
-  img = ImageUtils.centerWithMassInto(img, 28, 28, color(0), this); //<>//
-  
+  img.pixels = pixels;
+  img = ImageUtils.cropBorders(img, this); 
+  img = ImageUtils.fitInto(img, 20, 20, color(0), this);
+  img = ImageUtils.centerWithMassInto(img, 28, 28, color(0), this);
+
   image(img, 0, 0);
- 
+
   double[] pixelList = new double[img.pixels.length];
 
   for (int i = 0; i< pixelList.length; i++) {
@@ -227,10 +165,12 @@ this might become part of another step
   return getIndexOfLargest(guess);
 }
 
+
 // https://stackoverflow.com/questions/10813154/how-do-i-convert-a-number-to-a-letter-in-java
-private String getCharForNumber(int i) {
+String getCharForNumber(int i) {
   return i > 0 && i < 27 ? String.valueOf((char)(i + 64)) : null;
 }
+
 
 DataSet createTrainingSet(int lower, int upper, int inputSize, int outputSize, String imageFile, String labelFile) throws IOException {
   DataSet set = new DataSet(inputSize, outputSize); //input size output size
@@ -259,7 +199,7 @@ DataSet createTrainingSet(int lower, int upper, int inputSize, int outputSize, S
 }
 
 DataSet createTestingSet(int lower, int upper, int inputSize, int outputSize, String imageFile, String labelFile) throws IOException {
-  DataSet set = new DataSet(inputSize, outputSize); //input size output size
+  DataSet set = new DataSet(inputSize, outputSize); 
 
   try {
     MnistReader fileReader = new MnistReader();
@@ -288,7 +228,7 @@ DataSet createTestingSet(int lower, int upper, int inputSize, int outputSize, St
 void trainData(int epochs, int loops, int batch_size, String file, DataSet set, NeuralNetwork net) throws IOException {
   for (int e = 0; e < epochs; e++) {
     net.train(set, loops, batch_size);
-    System.out.println("Epoch:  " + (e+1) + "  Out of:  " + epochs);
+    println("Epoch:  " + (e+1) + "  Out of:  " + epochs);
     String path = dataPath("");
     net.saveNetwork(path + "\\networks\\" + file);
   }
@@ -336,16 +276,14 @@ int getIndexOfLargest(double[] a) {
 }
 
 
-String recognizeImages(ArrayList <PImage> images , NeuralNetwork numberNet, NeuralNetwork letterNet){
+String recognizeImages(ArrayList <PImage> images, NeuralNetwork numberNet, NeuralNetwork letterNet) {
   // Asume the format is AA 99 999
   String outputs = ""; 
-  
-  for(int i = 0; i<images.size(); i++){
-    if(i <2){
+
+  for (int i = 0; i<images.size(); i++) {
+    if (i <2) {
       outputs += getCharForNumber(useNeuralNetwork(images.get(i), letterNet));
-      
-    }
-    else{
+    } else {
       outputs += str(useNeuralNetwork(images.get(i), numberNet));
     }
   }
