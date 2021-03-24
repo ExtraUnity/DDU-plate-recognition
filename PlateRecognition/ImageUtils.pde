@@ -128,7 +128,7 @@ static class ImageUtils {
   }
 
   static void contrastExtension(PImage image, PApplet outer) {
-    //  the contrast extension makes the image sharpen
+    //  the contrast extension makes the image sharper
     /*
     Find the sum of the histogram values.
      Normalize these values dividing by the total number of pixels. 
@@ -140,16 +140,15 @@ static class ImageUtils {
     float sum = 0; 
     for (color c : image.pixels) sum += outer.red(c);
 
-    float normalized = sum / (float) image.pixels.length; // creates a floating number between 0 and 1
-
-    normalized *=255; // creates a floating number between 0 and 255
+    float normalized = sum / (float) image.pixels.length/255; // creates a floating number between  0 and 255
 
     for (int i = 0; i< image.pixels.length; i++) {
-      //image.pixels[i] = color(outer.red(image.pixels[i]) * normalized); // TODO: change to better color function
+      image.pixels[i] = myColor((int)(outer.red(image.pixels[i]) * normalized)); 
     }
   }
 
   static int myColor(int grayscale) { // converts a single grayscale value to the color dataformat in processing.
+  
     String binary = String.format("%8s", Integer.toBinaryString(grayscale)).replace(' ', '0');
     String binaryCombined = ("11111111"+binary+binary+binary);
     return Integer.parseUnsignedInt(binaryCombined, 2);
