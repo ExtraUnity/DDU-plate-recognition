@@ -145,14 +145,13 @@ static class ImageUtils {
     return brightnesses[brightnesses.length/2]/255.0;
   }
 
-  static float averageBrightness(PImage _image) {
-    _image.filter(GRAY);
+  static float averageBrightness(PImage image, PApplet outer) {
+    image.filter(GRAY);
     float sum = 0;
-    for (int i = 0; i < _image.pixels.length; i++) {
-      sum += _image.pixels[i] >> 16 & 0xFF;
+    for (int i = 0; i < image.pixels.length; i++) {
+      sum += outer.red(image.pixels[i]);
     }
-
-    return sum/_image.pixels.length/255.0;
+    return (sum/image.pixels.length)/255.0;
   }
 
   static PImage contrastExtension(PImage out, PApplet outer) {
