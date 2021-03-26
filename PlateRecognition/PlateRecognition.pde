@@ -17,6 +17,7 @@ int debugCounter = 0;
 
 void setup() {
     size(700, 700);
+    
     //background(0);
     String path = dataPath("");
     ImageUtils.main = this;
@@ -40,19 +41,19 @@ void setup() {
     letterNet = NeuralNetwork.loadNetwork(path + "\\networks\\letterNet.txt");
     numberNet = NeuralNetwork.loadNetwork(path + "\\networks\\numberNet.txt");
 
-    PImage test = loadImage(path+"\\AA.jpg");
+    PImage test = loadImage(path+"\\plates\\AA.jpg");
+    
     ArrayList <PImage> images = Segmentation.blobSegmentation(test, this);
-    
-    
+
     String readPlate = recognizeImages(images, numberNet, letterNet);
     println(readPlate);
     
     background(120);
     for (int i = 0; i < images.size(); i++) {
-      image(images.get(i), i*100, 150);
+      image(images.get(i), i*80, 150);
       fill(255);
-      textSize(26);
-      text(readPlate.charAt(i), i*100, 145);
+      textSize(36);
+      text(readPlate.charAt(i), i*80, 145);
     }
     
     //exportPicture(test, readPlate);
@@ -61,7 +62,7 @@ void setup() {
     println(e);
   }
 
-
+  
   noLoop();
 }
 
@@ -83,9 +84,8 @@ int useNeuralNetwork(PImage _img, NeuralNetwork network) {
   /*
   this might become part of another step
    */
-  img.filter(GRAY);
-  img.filter(THRESHOLD, 0.5);
   img.filter(INVERT);
+
   img.resize(width, height);
 
   /*
