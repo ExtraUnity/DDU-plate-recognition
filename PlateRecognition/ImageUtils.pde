@@ -129,20 +129,18 @@ static class ImageUtils {
   }
 
   static int median(int[] array) {
-
     array = sort(array);
     return array[array.length/2];
   }
 
-
-  static float medianBrightness(PImage _image) {
-    _image.filter(GRAY);
-    int[] brightnesses = new int[_image.pixels.length];
+  static float medianBrightness(PImage image, PApplet outer) {
+    //image.filter(GRAY);
+    int[] brightnesses = new int[image.pixels.length];
     for (int i = 0; i < brightnesses.length; i++) {
-      brightnesses[i] = _image.pixels[i] >> 16 & 0xFF;
+      brightnesses[i] = (int)outer.red(image.pixels[i]);
     }
-    sort(brightnesses);
-    return brightnesses[brightnesses.length/2]/255.0;
+    brightnesses = sort(brightnesses);
+    return (float) brightnesses[brightnesses.length/2]/255.0;
   }
 
   static float averageBrightness(PImage image, PApplet outer) {
@@ -192,7 +190,7 @@ static class ImageUtils {
       cumulativePost[i] = cumulativePost[i-1] + valueFrequencyPost[i]/out.pixels.length;
     }
     float mostCommon = main.getIndexOfLargest(valueFrequencyPost);
-    println(mostCommon);
+    //println(mostCommon);
 
     //for (int i = 0; i<256; i++) {
     //  outer.stroke(main.alphaToPixel(255));
