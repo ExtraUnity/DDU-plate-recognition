@@ -1,4 +1,7 @@
 import java.io.*; //<>//
+import java.util.LinkedList;
+import java.util.Collections;
+import java.util.Comparator;
 NeuralNetwork numberNet;
 NeuralNetwork letterNet;
 DataSet trainingLettersSet;
@@ -37,12 +40,13 @@ void setup() {
     letterNet = NeuralNetwork.loadNetwork(path + "\\networks\\letterNet.txt");
     numberNet = NeuralNetwork.loadNetwork(path + "\\networks\\numberNet.txt");
 
-    PImage test = loadImage(path+"\\AK.jpg");
-    ArrayList <PImage> images = Segmentation.plateSegmentation(test, this);
-
+    PImage test = loadImage(path+"\\AA.jpg");
+    ArrayList <PImage> images = Segmentation.blobSegmentation(test, this);
+    
+    
     String readPlate = recognizeImages(images, numberNet, letterNet);
     println(readPlate);
-
+    
     background(120);
     for (int i = 0; i < images.size(); i++) {
       image(images.get(i), i*100, 150);
@@ -50,6 +54,7 @@ void setup() {
       textSize(26);
       text(readPlate.charAt(i), i*100, 145);
     }
+    
     //exportPicture(test, readPlate);
   }
   catch(Exception e) {
@@ -228,6 +233,14 @@ int getIndexOfLargest(double[] a) {
     indexMax = a[i] > a[indexMax] ? i : indexMax;
   }
   return indexMax;
+}
+
+int getIndexOfLargest(float[] a) {
+  double[] temp = new double[a.length];
+  for(int i = 0;i<temp.length; i++) temp[i] = (double) a[i];
+  return getIndexOfLargest(temp);
+  
+  
 }
 
 
