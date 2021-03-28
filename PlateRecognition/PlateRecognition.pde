@@ -41,10 +41,10 @@ void setup() {
     letterNet = NeuralNetwork.loadNetwork(path + "\\networks\\letterNet.txt");
     numberNet = NeuralNetwork.loadNetwork(path + "\\networks\\numberNet.txt");
 
-    PImage test = loadImage(path+"\\plates\\AA.jpg");
-    
+    PImage test = loadImage(path+"\\plates\\FB.jpg");
+   
     ArrayList <PImage> images = Segmentation.blobSegmentation(test, this);
-
+    
     String readPlate = recognizeImages(images, numberNet, letterNet);
     println(readPlate);
     
