@@ -1,5 +1,4 @@
 static class Segmentation {
-
   static ArrayList <PImage> plateSegmentation(PImage plate, PApplet outer) {
     // based on Koo et al, 2009
 
@@ -82,15 +81,19 @@ static class Segmentation {
   static PImage preprossing(PImage plate, PApplet outer) {
     plate.resize(700, 0);
     plate.filter(GRAY);
-    plate.filter(BLUR, 0.5);
-    
+    plate.filter(BLUR, 1.5);
+
     //plate = ImageUtils.contrastExtension(plate,outer);
     plate = ImageUtils.filterImageByMedian(plate, outer);
     plate.resize(plate.width+1, plate.height+1);
-    //println(ImageUtils.averageBrightness(plate, outer), ImageUtils.medianBrightness(plate), (ImageUtils.averageBrightness(plate, outer)+ ImageUtils.medianBrightness(plate))/2.0);
-    //plate.filter(THRESHOLD, ImageUtils.averageBrightness(plate, outer)); // find the average intensity to filter dynamicly insted of taking a static value
-    plate.filter(THRESHOLD, (ImageUtils.averageBrightness(plate, outer)+ ImageUtils.medianBrightness(plate))/2.0); 
+    //println(ImageUtils.averageBrightness(plate, outer), ImageUtils.medianBrightness(plate, outer), (ImageUtils.averageBrightness(plate, outer)+ ImageUtils.medianBrightness(plate, outer))/2.0);
+    //plate.filter(THRESHOLD, ); // find the average intensity to filter dynamicly insted of taking a static value
+    //outer.image(plate, 0, 0);
+    plate.filter(THRESHOLD, (ImageUtils.averageBrightness(plate, outer)+ ImageUtils.medianBrightness(plate, outer))/2.0);
+    //outer.image(plate, 0, 250);
     plate = ImageUtils.cropBorders(plate, outer);
+
+
     return plate;
   }
 
@@ -98,54 +101,59 @@ static class Segmentation {
   static ArrayList <PImage> blobSegmentation(PImage plate, PApplet outer) {
     // Based on Yoon, 2011
     plate = preprossing(plate, outer);
-    
-    ArrayList <PImage> blobs = connectedComponentAnalysis(plate, outer);
 
-    ArrayList <PImage> nonCharBlobs = new ArrayList <PImage>();
+    ArrayList <Picture> blobs = connectedComponentAnalysis(plate, outer);
+
+    ArrayList <Picture> nonCharBlobs = new ArrayList <Picture>();
 
     for (int i = 0; i<blobs.size(); i++) {
       if (!isCharacterImage(blobs.get(i), plate, outer)) nonCharBlobs.add(blobs.get(i));
     }
-    blobs.removeAll(nonCharBlobs);
+    //blobs.removeAll(nonCharBlobs);
+    //int k = 4;
+    //isCharacterImage(blobs.get(k), plate, outer);
+    //outer.image(blobs.get(k).img, 0, 0);
 
     // visual feedback system
-    /*
+
     outer.background(125);
     outer.stroke(#00ff00);
     int xCord = 0; 
     for (int i = 0; i< blobs.size(); i++) {
       if (i == 0) { 
-        outer.image(blobs.get(i), 0, 0);
+        outer.image(blobs.get(i).img, 0, 0);
       } else {
-        outer.rect(xCord+blobs.get(i-1).width, 0, blobs.get(i).width, blobs.get(i).height);
-        outer.image(blobs.get(i), xCord+blobs.get(i-1).width, 0);
-        xCord+= blobs.get(i-1).width;
+        outer.rect(xCord+blobs.get(i-1).img.width, 0, blobs.get(i).img.width, blobs.get(i).img.height);
+        outer.image(blobs.get(i).img, xCord+blobs.get(i-1).img.width, 0);
+        xCord+= blobs.get(i-1).img.width;
       }
       xCord+= 5;
     }
-    */
+
     
-    return blobs; 
+    ArrayList <PImage> output = new ArrayList <PImage>();
+    for(Picture p : blobs) output.add(p.img);
+    
+    return output;
   }
 
-
-  static boolean isCharacterImage(PImage img, PImage originalPlate, PApplet outer) {
+  static boolean isCharacterImage(Picture blob, PImage originalPlate, PApplet outer) {
     // rule 1, Too large or small
-    if (img.width < 0.02*originalPlate.width) return false;
-    if (img.width > 0.3*originalPlate.width) return false; 
-    if (img.height < 0.25* originalPlate.height) return false;
+    if (blob.img.width < 0.02*originalPlate.width) return false; 
+    if (blob.img.width > 0.3*originalPlate.width) return false; 
+    if (blob.img.height < 0.25* originalPlate.height) return false;
 
     // rule 2, Area
-    int area =  countBlackPix(img, outer);
-    if (area < 0.15*img.height*img.width) return false; 
+    int area =  countBlackPix(blob.img, outer);
+    if (area < 0.25*blob.img.height*blob.img.width) return false;  
 
     // rule 3, Blobs positioned at too high or low
-    if (img.height/2 < 0.25 * originalPlate.height) return false;
-    if (img.height/2 > 0.75 * originalPlate.height) return false;
+    if (blob.boundingBox[3] - ((blob.boundingBox[3]- blob.boundingBox[1])/2) < 0.25 * originalPlate.height) return false;
+    if (blob.boundingBox[3] - ((blob.boundingBox[3]- blob.boundingBox[1])/2) > 0.75 * originalPlate.height) return false; 
 
 
     // rule 4, Blobs at the corners of the image
-    int[] massCenter = ImageUtils.computeCenterOfMass(img, outer);
+    int[] massCenter = ImageUtils.computeCenterOfMass(blob.img, outer);
 
     if (massCenter[0] < 0.015*originalPlate.width && massCenter[1] < 0.015 *originalPlate.height) return false;
     if (massCenter[0] < 0.015*originalPlate.width && massCenter[1] > 0.985 *originalPlate.height) return false;
@@ -163,7 +171,7 @@ static class Segmentation {
   }
 
 
-  static ArrayList <PImage> connectedComponentAnalysis(PImage plate, PApplet outer) {
+  static ArrayList <Picture> connectedComponentAnalysis(PImage plate, PApplet outer) {
     class Pixel {
       int col; // the grayscale value from 0 to 255
       int label;
@@ -185,7 +193,7 @@ static class Segmentation {
     //println(pix.length, plate.width, plate.width+pix.length);
 
     int currentLabel = 1; 
-    pix[0].label = 1;
+    pix[0].label = 0; // If this is one, the alogritm returns the wrong boxes, but the sources says that it should be one. 
     for (int i = 0; i<pix.length; i++) {
       if (pix[i].isBlack() && pix[i].label == 0) {
         pix[i].label = currentLabel;
@@ -205,10 +213,8 @@ static class Segmentation {
       }
     }
 
-    
     ArrayList <PImage> allBlob =  new ArrayList <PImage> ();
-    ArrayList <Integer> smallestX =  new ArrayList <Integer> ();
-
+    ArrayList <int[]> boundingBoxes =  new ArrayList <int[]> ();
 
     for (int k = 1; k<currentLabel; k++) {
       int[] boundingBox = new int[]{plate.width, plate.height, 0, 0}; // smalles x, smallest y, largest x, largest y
@@ -221,41 +227,40 @@ static class Segmentation {
           boundingBox[3] = max(boundingBox[3], i/plate.width);
         }
       }
+      
+      // make a clean PImage
+      // color the k labeled pixels black, keeping the rest white.
+      // cut out the correct blob
+      PImage kBlob = outer.createImage(plate.width, plate.height, ALPHA);
+      
+      for(int i = 0; i<kBlob.pixels.length ; i++){
+        if(pix[i].label == k) kBlob.pixels[i] = ImageUtils.main.alphaToPixel(0);
+        else kBlob.pixels[i] = ImageUtils.main.alphaToPixel(255);
+      }
+      
       PImage temp = outer.createImage((boundingBox[2]- boundingBox[0]), (boundingBox[3]- boundingBox[1]), ALPHA);
-      smallestX.add(boundingBox[0]);
-      temp.copy(plate, boundingBox[0], boundingBox[1], temp.width, temp.height, 0, 0, temp.width, temp.height);
+      boundingBoxes.add(boundingBox);
+      temp.copy(kBlob, boundingBox[0], boundingBox[1], temp.width, temp.height, 0, 0, temp.width, temp.height); 
       allBlob.add(temp);
-      //println(boundingBox[0], boundingBox[2]);
+      
     }
 
     /*
-    in order to sort the blobs from left to right, 
-    we have to make a class that can be sorted, 
-    as PImage cannot be sorted based on the x coordiantes by itself.
-    */
-    class Picture implements Comparable<Picture> {
-      PImage img;
-      int leftMostX;
-      Picture(PImage _img, int _leftMostX) {
-        this.img = _img;
-        this.leftMostX = _leftMostX;
-      }
+     in order to sort the blobs from left to right, 
+     we have to make a class that can be sorted, 
+     as PImages cannot be sorted based on the x coordiantes, or any other attribute.
+     */
 
-      public int compareTo(Picture other) {
-        return round(this.leftMostX - other.leftMostX) ;
-      }
-    }
-    
     ArrayList <Picture> pics =  new ArrayList <Picture> ();
-    
-    for(int i = 0;i<allBlob.size(); i++){
-      pics.add(new Picture(allBlob.get(i), smallestX.get(i)));
+
+    for (int i = 0; i<allBlob.size(); i++) {
+      pics.add(new Picture(allBlob.get(i), boundingBoxes.get(i)));
     }
     Collections.sort(pics);
-    allBlob.clear();
-    for(Picture p : pics) allBlob.add(p.img);
+    //allBlob.clear();
+    //for (Picture p : pics) allBlob.add(p.img);
 
-    return allBlob;
+    return pics;
   }
 
   static int[] findSmallestLength(int[][] breaks, int start, int stop, int _height) {
@@ -265,5 +270,20 @@ static class Segmentation {
       max = min(max, breaks[i][1]);
     }
     return new int[] {min, max};
+  }
+
+  static class Picture implements Comparable<Picture> {
+    PImage img;
+    int[] boundingBox;
+    Picture(PImage _img, int[] boundingBox) {
+      this.img = _img;
+      this.boundingBox = boundingBox;
+    }
+    Picture() {
+    }
+
+    public int compareTo(Picture other) {
+      return round(this.boundingBox[0] - other.boundingBox[0]) ;
+    }
   }
 }
