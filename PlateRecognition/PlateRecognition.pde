@@ -2,8 +2,7 @@ import java.io.*; //<>//
 import java.util.LinkedList;
 import java.util.Collections;
 import java.util.Comparator;
-NeuralNetwork numberNet;
-NeuralNetwork letterNet;
+
 DataSet trainingLettersSet;
 DataSet testingLettersSet;
 DataSet trainingDigitsSet;
@@ -16,11 +15,13 @@ double[] drawNum;
 int debugCounter = 0; 
 
 void setup() {
-    size(700, 700);
-    
-    //background(0);
-    String path = dataPath("");
-    ImageUtils.main = this;
+  size(700, 700);
+  NeuralNetwork numberNet;
+  NeuralNetwork letterNet;
+
+  //background(0);
+  String path = dataPath("");
+  ImageUtils.main = this;
   try {
     /*
     letterNet = new NeuralNetwork(784, 600, 400, 200, 27);
@@ -41,13 +42,13 @@ void setup() {
     letterNet = NeuralNetwork.loadNetwork(path + "\\networks\\letterNet.txt");
     numberNet = NeuralNetwork.loadNetwork(path + "\\networks\\numberNet.txt");
 
-    PImage test = loadImage(path+"\\plates\\FB.jpg");
-   
-    ArrayList <PImage> images = Segmentation.blobSegmentation(test, this);
-    
+    PImage test = loadImage(path+"\\plates\\AB.png");
+
+    ArrayList <PImage> images = Segmentation.blobSegmentation(test, this, numberNet, letterNet, this);
+
     String readPlate = recognizeImages(images, numberNet, letterNet);
     println(readPlate);
-    
+
     background(120);
     for (int i = 0; i < images.size(); i++) {
       image(images.get(i), i*80, 150);
@@ -55,14 +56,14 @@ void setup() {
       textSize(36);
       text(readPlate.charAt(i), i*80, 145);
     }
-    
+
     //exportPicture(test, readPlate);
   }
   catch(Exception e) {
     println(e);
   }
 
-  
+
   noLoop();
 }
 
@@ -72,12 +73,12 @@ void exportPicture(PImage plate, String fileName) {
 }
 
 
-int useNeuralNetwork(String path, NeuralNetwork network) {
+double[] useNeuralNetwork(String path, NeuralNetwork network) {
   PImage img = loadImage(path);
   return useNeuralNetwork(img, network);
 }
 
-int useNeuralNetwork(PImage _img, NeuralNetwork network) {
+double[] useNeuralNetwork(PImage _img, NeuralNetwork network) {
   PImage img = _img.get();
 
 
@@ -122,7 +123,7 @@ int useNeuralNetwork(PImage _img, NeuralNetwork network) {
     pixelList[i] = (double)(brightness(img.pixels[i])) / ((double)256);
   }
   double[] guess = network.feedForward(pixelList);
-  return getIndexOfLargest(guess);
+  return new double[] {getIndexOfLargest(guess), guess[getIndexOfLargest(guess)]};
 }
 
 
@@ -237,10 +238,16 @@ int getIndexOfLargest(double[] a) {
 
 int getIndexOfLargest(float[] a) {
   double[] temp = new double[a.length];
-  for(int i = 0;i<temp.length; i++) temp[i] = (double) a[i];
+  for (int i = 0; i<temp.length; i++) temp[i] = (double) a[i];
   return getIndexOfLargest(temp);
-  
-  
+}
+
+int getIndexOfSmallest(double[] a) {
+  int indexMin = 0;
+  for (int i = 0; i<a.length; i++) {
+    indexMin = a[i] < a[indexMin] ? i : indexMin;
+  }
+  return indexMin;
 }
 
 
@@ -250,9 +257,9 @@ String recognizeImages(ArrayList <PImage> images, NeuralNetwork numberNet, Neura
 
   for (int i = 0; i<images.size(); i++) {
     if (i <2) {
-      outputs += getCharForNumber(useNeuralNetwork(images.get(i), letterNet));
+      outputs += getCharForNumber((int)useNeuralNetwork(images.get(i), letterNet)[0] );
     } else {
-      outputs += str(useNeuralNetwork(images.get(i), numberNet));
+      outputs += str((int)useNeuralNetwork(images.get(i), numberNet)[0]);
     }
   }
   return outputs;
