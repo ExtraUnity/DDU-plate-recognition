@@ -81,7 +81,7 @@ static class Segmentation {
   static PImage preprossing(PImage plate, PApplet outer) {
     plate.resize(700, 0);
     plate.filter(GRAY);
-    plate.filter(BLUR, 1.5);
+    plate.filter(BLUR, 0);
 
     //plate = ImageUtils.contrastExtension(plate,outer);
     plate = ImageUtils.filterImageByMedian(plate, outer);
@@ -109,33 +109,127 @@ static class Segmentation {
     for (int i = 0; i<blobs.size(); i++) {
       if (!isCharacterImage(blobs.get(i), plate, outer)) nonCharBlobs.add(blobs.get(i));
     }
-    //blobs.removeAll(nonCharBlobs);
+    blobs.removeAll(nonCharBlobs);
+    blobs = blobSplit(blobs, outer);
+    blobs = doubleLineSort(plate, blobs, outer);
+
     //int k = 4;
     //isCharacterImage(blobs.get(k), plate, outer);
     //outer.image(blobs.get(k).img, 0, 0);
 
-    // visual feedback system
-
+    // visual feedback system:
+    /*
     outer.background(125);
-    outer.stroke(#00ff00);
-    int xCord = 0; 
-    for (int i = 0; i< blobs.size(); i++) {
-      if (i == 0) { 
-        outer.image(blobs.get(i).img, 0, 0);
-      } else {
-        outer.rect(xCord+blobs.get(i-1).img.width, 0, blobs.get(i).img.width, blobs.get(i).img.height);
-        outer.image(blobs.get(i).img, xCord+blobs.get(i-1).img.width, 0);
-        xCord+= blobs.get(i-1).img.width;
-      }
-      xCord+= 5;
-    }
+     outer.stroke(#00ff00);
+     int xCord = 0; 
+     for (int i = 0; i< blobs.size(); i++) {
+     if (i == 0) { 
+     outer.image(blobs.get(i).img, 0, 0);
+     } else {
+     outer.rect(xCord+blobs.get(i-1).img.width, 0, blobs.get(i).img.width, blobs.get(i).img.height);
+     outer.image(blobs.get(i).img, xCord+blobs.get(i-1).img.width, 0);
+     xCord+= blobs.get(i-1).img.width;
+     }
+     xCord+= 5;
+     }
+     */
 
-    
     ArrayList <PImage> output = new ArrayList <PImage>();
-    for(Picture p : blobs) output.add(p.img);
-    
+    for (Picture p : blobs) output.add(p.img);
+
     return output;
   }
+
+  static boolean isDoubleLine(PImage plate, ArrayList <Picture> blobs, PApplet outer) {
+    int[] heights = new int[blobs.size()];
+
+    for (int i = 0; i<heights.length; i++) {
+      heights[i] = blobs.get(i).img.height;
+    }
+
+    int median = ImageUtils.median(heights);
+
+    boolean lessHalf = median < 0.5 * plate.height;
+
+    int topHalf = 0; 
+    for (Picture p : blobs) {
+      if (p.center[1] < 0.5 * plate.height) topHalf++;
+    }
+
+    boolean fourTop = topHalf == 4;
+
+    return lessHalf && fourTop;
+  }
+
+  static ArrayList <Picture> doubleLineSort(PImage plate, ArrayList <Picture> blobs, PApplet outer) {
+    if (!isDoubleLine(plate, blobs, outer)) {
+      Collections.sort(blobs); 
+      return blobs;
+    }
+
+    ArrayList <Picture> top = new ArrayList <Picture>();
+    ArrayList <Picture> bottom = new ArrayList <Picture>();
+
+    for (Picture p : blobs) {
+      if (p.center[1] < 0.5 * plate.height) top.add(p);
+      else bottom.add(p);
+    }
+    Collections.sort(top);
+    Collections.sort(bottom);
+    top.addAll(bottom);
+
+    return top;
+  }
+
+  static ArrayList <Picture> blobSplit(ArrayList <Picture> blobs, PApplet outer) {
+    int[] widths = new int[blobs.size()];
+
+    for (int i = 0; i<widths.length; i++) {
+      widths[i] = blobs.get(i).img.width;
+    }
+
+    float median = ImageUtils.median(widths);
+
+    for (int i = 0; i< blobs.size(); i++) { //<>//
+      //println(blobs.size());
+      if (blobs.get(i).img.width > 1.8*median) {
+        int splitRow = leastBlackVerticalLine(blobs.get(i), outer);
+        // create the left picture
+        Picture fullBlob = blobs.get(i);
+        PImage img = fullBlob.img.get(0, 0, splitRow, fullBlob.img.height );
+
+        Picture leftPicture = new Picture(img, new int[]{fullBlob.boundingBox[0], fullBlob.boundingBox[1], fullBlob.boundingBox[0]+splitRow, fullBlob.boundingBox[3]});
+        println(splitRow);
+        
+
+        // create the right picture
+        img = fullBlob.img.get(splitRow, 0, fullBlob.img.width-splitRow, fullBlob.img.height);
+        Picture rightPicture = new Picture(img, new int[]{fullBlob.boundingBox[0]+splitRow, fullBlob.boundingBox[1], fullBlob.boundingBox[2], fullBlob.boundingBox[3]});
+  
+        println(leftPicture.img.width,rightPicture.img.width, fullBlob.img.width);
+
+        // remove the old picture
+        blobs.add(leftPicture);
+        blobs.add(rightPicture);
+        blobs.remove(i);
+      }
+    }
+    return blobs;
+  }
+
+  static int leastBlackVerticalLine(Picture blob, PApplet outer) {
+    int min = blob.img.height; 
+    int minIndex = blob.img.width;
+    for (int col = 1; col < blob.img.width-1; col++) {
+      int blackpixels = 0;
+      for (int row = 0; row <blob.img.height; row++) {
+        if (outer.red(blob.img.pixels[row *blob.img.width + col]) == 0) blackpixels++;
+      }
+      if(blackpixels < min) {minIndex = col; min = blackpixels; }
+    }
+    return minIndex;
+  }
+
 
   static boolean isCharacterImage(Picture blob, PImage originalPlate, PApplet outer) {
     // rule 1, Too large or small
@@ -227,22 +321,21 @@ static class Segmentation {
           boundingBox[3] = max(boundingBox[3], i/plate.width);
         }
       }
-      
+
       // make a clean PImage
       // color the k labeled pixels black, keeping the rest white.
       // cut out the correct blob
       PImage kBlob = outer.createImage(plate.width, plate.height, ALPHA);
-      
-      for(int i = 0; i<kBlob.pixels.length ; i++){
-        if(pix[i].label == k) kBlob.pixels[i] = ImageUtils.main.alphaToPixel(0);
+
+      for (int i = 0; i<kBlob.pixels.length; i++) {
+        if (pix[i].label == k) kBlob.pixels[i] = ImageUtils.main.alphaToPixel(0);
         else kBlob.pixels[i] = ImageUtils.main.alphaToPixel(255);
       }
-      
+
       PImage temp = outer.createImage((boundingBox[2]- boundingBox[0]), (boundingBox[3]- boundingBox[1]), ALPHA);
       boundingBoxes.add(boundingBox);
       temp.copy(kBlob, boundingBox[0], boundingBox[1], temp.width, temp.height, 0, 0, temp.width, temp.height); 
       allBlob.add(temp);
-      
     }
 
     /*
@@ -263,6 +356,8 @@ static class Segmentation {
     return pics;
   }
 
+
+
   static int[] findSmallestLength(int[][] breaks, int start, int stop, int _height) {
     int max = _height, min = 0;
     for (int i = start; i < stop; i++) {
@@ -275,15 +370,24 @@ static class Segmentation {
   static class Picture implements Comparable<Picture> {
     PImage img;
     int[] boundingBox;
+    int[] center;
     Picture(PImage _img, int[] boundingBox) {
       this.img = _img;
       this.boundingBox = boundingBox;
+      this.center = this.center();
     }
     Picture() {
     }
 
     public int compareTo(Picture other) {
-      return round(this.boundingBox[0] - other.boundingBox[0]) ;
+      return round(this.boundingBox[0] - other.boundingBox[0]);
+    }
+
+    private int[] center() {
+      int[] output = new int[]{0, 0};
+      output[0] = (this.boundingBox[0] + this.boundingBox[2])/2;
+      output[1] = (this.boundingBox[1] + this.boundingBox[3])/2;
+      return output;
     }
   }
 }
