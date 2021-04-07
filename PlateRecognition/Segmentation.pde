@@ -1,4 +1,4 @@
-static class Segmentation {
+static class Segmentation { //<>//
   static ArrayList <PImage> plateSegmentation(PImage plate, PApplet outer) {
     // based on Koo et al, 2009
 
@@ -98,7 +98,7 @@ static class Segmentation {
   }
 
 
-  static ArrayList <PImage> blobSegmentation(PImage plate, PApplet outer) {
+  static ArrayList <PImage> blobSegmentation(PImage plate, PApplet outer, NeuralNetwork numberNetwork, NeuralNetwork letterNetwork, PlateRecognition main) {
     // Based on Yoon, 2011
     plate = preprossing(plate, outer);
 
@@ -133,9 +133,24 @@ static class Segmentation {
      xCord+= 5;
      }
      */
-
     ArrayList <PImage> output = new ArrayList <PImage>();
     for (Picture p : blobs) output.add(p.img);
+
+
+
+    ArrayList<Double> confidences = new ArrayList<Double>();
+    for (PImage p : output) {
+      double[] numberConfidence = main.useNeuralNetwork(p, numberNetwork);
+      double[] letterConfidence = main.useNeuralNetwork(p, letterNetwork);
+      confidences.add(Math.max(numberConfidence[1], letterConfidence[1]));
+    }
+    
+    while (output.size()>7) {  
+      double[] confidencesa = new double[confidences.size()];
+      for (int i = 0; i<confidences.size(); i++) confidencesa[i] = (double) confidences.get(i);
+      output.remove(main.getIndexOfSmallest(confidencesa));
+      confidences.remove(main.getIndexOfSmallest(confidencesa));
+    }
 
     return output;
   }
@@ -190,7 +205,7 @@ static class Segmentation {
 
     float median = ImageUtils.median(widths);
 
-    for (int i = 0; i< blobs.size(); i++) { //<>//
+    for (int i = 0; i< blobs.size(); i++) {
       //println(blobs.size());
       if (blobs.get(i).img.width > 1.8*median) {
         int splitRow = leastBlackVerticalLine(blobs.get(i), outer);
@@ -200,13 +215,13 @@ static class Segmentation {
 
         Picture leftPicture = new Picture(img, new int[]{fullBlob.boundingBox[0], fullBlob.boundingBox[1], fullBlob.boundingBox[0]+splitRow, fullBlob.boundingBox[3]});
         println(splitRow);
-        
+
 
         // create the right picture
         img = fullBlob.img.get(splitRow, 0, fullBlob.img.width-splitRow, fullBlob.img.height);
         Picture rightPicture = new Picture(img, new int[]{fullBlob.boundingBox[0]+splitRow, fullBlob.boundingBox[1], fullBlob.boundingBox[2], fullBlob.boundingBox[3]});
-  
-        println(leftPicture.img.width,rightPicture.img.width, fullBlob.img.width);
+
+        println(leftPicture.img.width, rightPicture.img.width, fullBlob.img.width);
 
         // remove the old picture
         blobs.add(leftPicture);
@@ -217,6 +232,7 @@ static class Segmentation {
     return blobs;
   }
 
+
   static int leastBlackVerticalLine(Picture blob, PApplet outer) {
     int min = blob.img.height; 
     int minIndex = blob.img.width;
@@ -225,7 +241,10 @@ static class Segmentation {
       for (int row = 0; row <blob.img.height; row++) {
         if (outer.red(blob.img.pixels[row *blob.img.width + col]) == 0) blackpixels++;
       }
-      if(blackpixels < min) {minIndex = col; min = blackpixels; }
+      if (blackpixels < min) {
+        minIndex = col; 
+        min = blackpixels;
+      }
     }
     return minIndex;
   }
@@ -256,6 +275,8 @@ static class Segmentation {
 
     return true;
   }
+
+
 
 
   static int countBlackPix(PImage img, PApplet outer) {
