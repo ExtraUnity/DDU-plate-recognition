@@ -2,6 +2,7 @@ import java.io.*; //<>//
 import java.util.LinkedList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Random;
 
 DataSet trainingLettersSet;
 DataSet testingLettersSet;
@@ -18,44 +19,44 @@ void setup() {
   size(700, 700);
   NeuralNetwork numberNet;
   NeuralNetwork letterNet;
-  
+
   //background(0);
   String path = dataPath("");
   ImageUtils.main = this;
   try {
-    /*
+    
     letterNet = new NeuralNetwork(784, 600, 400, 200, 27);
      numberNet = new NeuralNetwork(784, 300, 100, 10);
      
      trainingDigitsSet = createTrainingSet(0, 60000, 784, 10, "emnist-digits-train-images.idx3-ubyte", "emnist-digits-train-labels.idx3-ubyte");
-     trainData(50, 50, 1200, "numberNet", trainingDigitsSet, numberNet);
+     trainData(50, 50, 1200, "numberNet", trainingDigitsSet, testingDigitsSet, numberNet);
      trainingLettersSet = createTrainingSet(0, 60000, 784, 27, "emnist-letters-train-images.idx3-ubyte", "emnist-letters-train-labels.idx3-ubyte"); //60000 is the number of letters. change this maybe
-     trainData(50, 50, 1200, "letterNet", trainingLettersSet, letterNet);
+     trainData(50, 50, 1200, "letterNet", trainingLettersSet, testingLettersSet, letterNet);
      
      testingDigitsSet = createTestingSet(0, 40000, 784, 1, "emnist-digits-test-images.idx3-ubyte", "emnist-digits-test-labels.idx3-ubyte");
      testData(numberNet, testingDigitsSet);
      
      testingLettersSet = createTestingSet(0, 14800, 784, 1, "emnist-letters-test-images.idx3-ubyte", "emnist-letters-test-labels.idx3-ubyte"); //60000 is the number of letters. change this maybe
      testData(letterNet, testingLettersSet);
-     */
+     
 
-    letterNet = NeuralNetwork.loadNetwork(path + "\\networks\\letterNet.txt");
-    numberNet = NeuralNetwork.loadNetwork(path + "\\networks\\numberNet.txt");
+    //letterNet = NeuralNetwork.loadNetwork(path + "\\networks\\letterNet.txt");
+    //numberNet = NeuralNetwork.loadNetwork(path + "\\networks\\numberNet.txt");
 
-    PImage test = loadImage(path+"\\plates\\CU.jpg");
+    //PImage test = loadImage(path+"\\plates\\CU.jpg");
 
-    ArrayList <PImage> images = Segmentation.blobSegmentation(test, this, numberNet, letterNet, this);
+    //ArrayList <PImage> images = Segmentation.blobSegmentation(test, this, numberNet, letterNet, this);
 
-    String readPlate = recognizeImages(images, numberNet, letterNet);
-    println(readPlate);
+    //String readPlate = recognizeImages(images, numberNet, letterNet);
+    //println(readPlate);
 
-    background(120);
-    for (int i = 0; i < images.size(); i++) {
-      image(images.get(i), i*80, 150);
-      fill(255);
-      textSize(36);
-      text(readPlate.charAt(i), i*80, 145);
-    }
+    //background(120);
+    //for (int i = 0; i < images.size(); i++) {
+    //  image(images.get(i), i*80, 150);
+    //  fill(255);
+    //  textSize(36);
+    //  text(readPlate.charAt(i), i*80, 145);
+    //}
 
     //exportPicture(test, readPlate);
   }
@@ -94,7 +95,7 @@ double[] useNeuralNetwork(PImage _img, NeuralNetwork network) {
    */
 
   // The images must be drawn on the screeen if they are to be rotated and flipped
-  
+
   //translate(width/2, height/2);
   //rotate(-PI/2);
   //scale(-1, 1);
@@ -123,7 +124,7 @@ double[] useNeuralNetwork(PImage _img, NeuralNetwork network) {
   for (int i = 0; i< pixelList.length; i++) {
     pixelList[i] = (double)(brightness(img.pixels[i])) / ((double)256);
   }
-  double[] guess = network.feedForward(pixelList);
+  double[] guess = network.feedForward(pixelList, 0);
   return new double[] {getIndexOfLargest(guess), guess[getIndexOfLargest(guess)]};
 }
 
@@ -187,28 +188,53 @@ DataSet createTestingSet(int lower, int upper, int inputSize, int outputSize, St
 }
 
 
-void trainData(int epochs, int loops, int batch_size, String file, DataSet set, NeuralNetwork net) throws IOException {
+void trainData(int epochs, int loops, int batch_size, String file, DataSet set, DataSet testingSet, NeuralNetwork net) throws IOException {
   for (int e = 0; e < epochs; e++) {
     net.train(set, loops, batch_size);
+    testData(net,testingSet);
     println("Epoch:  " + (e+1) + "  Out of:  " + epochs);
     String path = dataPath("");
     net.saveNetwork(path + "\\networks\\" + file);
   }
 }
 
-void testData(NeuralNetwork net, DataSet testingSet) {
+void trainData(int epochs, int loops, int batch_size, String file, int stopThreshold, DataSet trainingSet, DataSet testingSet, NeuralNetwork net) throws IOException {
+  float bestTest = 0;
+  int wrongTurns = 0;
+  for (int e = 0; e < epochs; e++) {
+    net.train(trainingSet, loops, batch_size);
+    System.out.println("Epoch:  " + (e+1) + "  Out of:  " + epochs);
+    float test = testData(net, testingSet);
+    String path = dataPath("");
+    if (test<bestTest) {
+      wrongTurns++;
+      if (wrongTurns == 0 || wrongTurns == stopThreshold) {//Early stopping to prevent overfitting
+        println("stopping training");
+
+        net.saveNetwork(path + "\\networks\\" + file);
+        break;
+      }
+    } else {
+      bestTest = test;
+      wrongTurns = 0;
+      net.saveNetwork(path + "\\networks\\" + file);
+    }
+  }
+}
+
+float testData(NeuralNetwork net, DataSet testingSet) {
   int correct = 0;
   int wrong = 0;
   for (int i = 0; i<testingSet.data.size(); i++) {
-
-    if (getIndexOfLargest(net.feedForward(testingSet.data.get(i)[0]))==testingSet.data.get(i)[1][0]) {
+    double[] result = net.feedForward(testingSet.getInput(i), 0);
+    if (getIndexOfLargest(result)==testingSet.getOutput(i)[0]) {
       correct++;
     } else {
       wrong++;
     }
-    println((1f*correct)/(1f*(correct+wrong)));
   }
   println("Final test accuracy: " + ((1f*correct)/(1f*(correct+wrong)))*100 + "%");
+  return ((1f*correct)/(1f*(correct+wrong)));
 }
 
 static double[] createLabels(int i, int size) {
@@ -270,27 +296,49 @@ int alphaToPixel(int gray) {
   return color(gray);
 }
 
- static double[] rotateArrayQuarter(double[] arr, int arrWidth, int arrHeight) {
-    double[] output = new double[arr.length];
-    for(int col = arrWidth-1; col>=0; col--) {
-     for(int row = 0; row<arrHeight; row++) {
-       output[(arrWidth-1-col)*arrWidth+row] = arr[arr.length + col - arrWidth*(arrHeight-row)];
-     }
+static double[] rotateArrayQuarter(double[] arr, int arrWidth, int arrHeight) {
+  double[] output = new double[arr.length];
+  for (int col = arrWidth-1; col>=0; col--) {
+    for (int row = 0; row<arrHeight; row++) {
+      output[(arrWidth-1-col)*arrWidth+row] = arr[arr.length + col - arrWidth*(arrHeight-row)];
     }
-    return output;
   }
-  
- static double[] flipArray(double[] arr, int arrWidth, int arrHeight) {
-    double[] output = new double[arr.length];
-    
-    for(int row = 0; row<arrHeight; row++) {
-     int col = 0;
-      while(col<arrWidth) {
-        output[row*arrWidth+col] = arr[(row+1)*arrWidth-1-col];
-        col++;
-      }
-     
+  return output;
+}
+
+static double[] flipArray(double[] arr, int arrWidth, int arrHeight) {
+  double[] output = new double[arr.length];
+
+  for (int row = 0; row<arrHeight; row++) {
+    int col = 0;
+    while (col<arrWidth) {
+      output[row*arrWidth+col] = arr[(row+1)*arrWidth-1-col];
+      col++;
     }
-    
-    return output;
   }
+
+  return output;
+}
+
+static int[] getRandomValues(int lower, int upper, int size) {
+  Random indexGenerator = new Random();
+  int[] is = new int[size];
+  for (int i = 0; i< size; i++) {
+    int n = indexGenerator.nextInt((upper-lower)) + lower;
+    while (containsValue(is, n)) {
+      n = indexGenerator.nextInt((upper-lower)) + lower;
+      ;
+    }
+
+    is[i] = n;
+  }
+  return is;
+}
+
+static boolean containsValue(int[] a, int n) {
+  if (a == null) return false;
+  for (int i : a) {
+    if (i==n) return true;
+  }
+  return false;
+}

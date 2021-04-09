@@ -33,24 +33,32 @@ static class NeuralNetwork implements Serializable {
     }
   }
 
-  double[] feedForward(double[] input) {
-    if (input.length != this.INPUT_SIZE) {
+  double[] feedForward(double[] input, float dropoutRatio) {
+  if (input.length != this.INPUT_SIZE) {
       return null;
     }
     this.activation[0] = input;
 
     for (int l = 1; l<NETWORK_SIZE; l++) { //all layers, l
-      for (int j = 0; j<LAYER_SIZES[l]; j++) {//all neurons in layer, j
-        double sum = bias[l][j]; //initial value is just the bias
+      int[] dropouts = null;
+      if (l!=NETWORK_SIZE-1) {
+        dropouts = getRandomValues(0, LAYER_SIZES[l]-1, (int)(LAYER_SIZES[l]*dropoutRatio));  //25% dropout, to discourage memorization of training data
+      }
+      for (int j = 0; j<LAYER_SIZES[l]; j++) {//all neurons in layer
+        if (!containsValue(dropouts, j)) {
+          double sum = bias[l][j]; //initial value is just the bias
 
-        for (int k = 0; k<LAYER_SIZES[l-1]; k++) {//all neurons in previous layer, k
-          sum += activation[l-1][k] * weights[l][j][k]; //activation of previous neuron times weights from previous to current neuron
+          for (int k = 0; k<LAYER_SIZES[l-1]; k++) {//all neurons in previous layer
+            sum += activation[l-1][k] * weights[l][j][k]; //activation of previous neuron times weights from previous to current neuron
+          }
+
+          this.activation[l][j] = sigmoid(sum);
+        } else {
+          this.activation[l][j] = 0;
         }
-
-        this.activation[l][j] = sigmoid(sum); //ReLU or sigmoid can be used here.
       }
     }
-    return this.activation[NETWORK_SIZE-1];
+    return activation[NETWORK_SIZE-1];
   }
 
   void train(DataSet set, int loops, int batchSize) {
@@ -69,7 +77,7 @@ static class NeuralNetwork implements Serializable {
     if (input.length == INPUT_SIZE && target.length == OUTPUT_SIZE) {
       input = rotateArrayQuarter(input,imgWidth,imgWidth);
       input = flipArray(input,imgWidth,imgWidth);
-      feedForward(input);
+      feedForward(input, 0.25);
       backpropError(target);
       update(learningRate);
     }
@@ -81,7 +89,7 @@ static class NeuralNetwork implements Serializable {
   
 
   double meanSquaredError(double[] input, double[] target) {
-    feedForward(input);
+    feedForward(input,0.25);
     double v = 0;
     for (int i = 0; i<target.length; i++) {
       v+=(target[i]-activation[NETWORK_SIZE-1][i])*(target[i]-activation[NETWORK_SIZE-1][i]);
