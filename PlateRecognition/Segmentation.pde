@@ -81,7 +81,7 @@ static class Segmentation { //<>//
   static PImage preprossing(PImage plate, PApplet outer) {
     plate.resize(700, 0);
     plate.filter(GRAY);
-    plate.filter(BLUR, 0);
+    plate.filter(BLUR, 1);
 
     //plate = ImageUtils.contrastExtension(plate,outer);
     plate = ImageUtils.filterImageByMedian(plate, outer);
