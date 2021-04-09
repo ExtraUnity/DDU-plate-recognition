@@ -1,4 +1,4 @@
-import java.io.*; //<>//
+import java.io.*; //<>// //<>//
 import java.util.LinkedList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -43,7 +43,6 @@ void setup() {
 
     letterNet = NeuralNetwork.loadNetwork(path + "\\networks\\letterNet.txt");
     numberNet = NeuralNetwork.loadNetwork(path + "\\networks\\numberNet.txt");
-
 
     selectFile();
     

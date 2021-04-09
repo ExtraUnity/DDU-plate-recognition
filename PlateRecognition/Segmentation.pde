@@ -1,4 +1,4 @@
-static class Segmentation { //<>//
+static class Segmentation { //<>// //<>//
   static ArrayList <PImage> plateSegmentation(PImage plate, PApplet outer) {
     // based on Koo et al, 2009
 
@@ -105,10 +105,11 @@ static class Segmentation { //<>//
     ArrayList <Picture> blobs = connectedComponentAnalysis(plate, outer);
 
     ArrayList <Picture> nonCharBlobs = new ArrayList <Picture>();
-
+    blobs = blobSplit(blobs, outer);
     for (int i = 0; i<blobs.size(); i++) {
       if (!isCharacterImage(blobs.get(i), plate, outer)) nonCharBlobs.add(blobs.get(i));
     }
+
     blobs.removeAll(nonCharBlobs);
     blobs = blobSplit(blobs, outer);
     blobs = doubleLineSort(plate, blobs, outer);
@@ -133,18 +134,20 @@ static class Segmentation { //<>//
      xCord+= 5;
      }
      */
+
     ArrayList <PImage> output = new ArrayList <PImage>();
     for (Picture p : blobs) output.add(p.img);
-
-
-
+    //println();
     ArrayList<Double> confidences = new ArrayList<Double>();
     for (PImage p : output) {
+
+      //THIS GIVES THE EXCEPTION: java.lang.IllegalArgumentException: Width (0) and height (43) cannot be <= 0
       double[] numberConfidence = main.useNeuralNetwork(p, numberNetwork);
       double[] letterConfidence = main.useNeuralNetwork(p, letterNetwork);
+
       confidences.add(Math.max(numberConfidence[1], letterConfidence[1]));
     }
-    
+
     while (output.size()>7) {  
       double[] confidencesa = new double[confidences.size()];
       for (int i = 0; i<confidences.size(); i++) confidencesa[i] = (double) confidences.get(i);
