@@ -81,8 +81,8 @@ static class Segmentation { //<>//
   static PImage preprossing(PImage plate, PApplet outer) {
     plate.resize(700, 0);
     plate.filter(GRAY);
-    plate.filter(BLUR, 0);
-
+    plate.filter(BLUR, 1);
+    
     //plate = ImageUtils.contrastExtension(plate,outer);
     plate = ImageUtils.filterImageByMedian(plate, outer);
     plate.resize(plate.width+1, plate.height+1);
@@ -93,7 +93,7 @@ static class Segmentation { //<>//
     //outer.image(plate, 0, 250);
     plate = ImageUtils.cropBorders(plate, outer);
 
-
+    
     return plate;
   }
 
@@ -214,14 +214,10 @@ static class Segmentation { //<>//
         PImage img = fullBlob.img.get(0, 0, splitRow, fullBlob.img.height );
 
         Picture leftPicture = new Picture(img, new int[]{fullBlob.boundingBox[0], fullBlob.boundingBox[1], fullBlob.boundingBox[0]+splitRow, fullBlob.boundingBox[3]});
-        println(splitRow);
-
 
         // create the right picture
         img = fullBlob.img.get(splitRow, 0, fullBlob.img.width-splitRow, fullBlob.img.height);
         Picture rightPicture = new Picture(img, new int[]{fullBlob.boundingBox[0]+splitRow, fullBlob.boundingBox[1], fullBlob.boundingBox[2], fullBlob.boundingBox[3]});
-
-        println(leftPicture.img.width, rightPicture.img.width, fullBlob.img.width);
 
         // remove the old picture
         blobs.add(leftPicture);
