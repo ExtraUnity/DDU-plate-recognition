@@ -54,25 +54,29 @@ static class NeuralNetwork implements Serializable {
   }
 
   void train(DataSet set, int loops, int batchSize) {
+    
     for (int i = 0; i<loops; i++) {
       DataSet batch = set.getBatch(batchSize);
       for (int b = 0; b<batchSize-1; b++) {
-        this.train(batch.data.get(b)[0], batch.data.get(b)[1], 0.3);
+        int imageWidth = (int)sqrt(batch.data.get(b)[0].length);
+        this.train(batch.data.get(b)[0], batch.data.get(b)[1], 0.3, imageWidth);
       }
       println(meanSquaredError(batch));
     }
   }
 
-  void train(double[] input, double[] target, double learningRate) {
+  void train(double[] input, double[] target, double learningRate, int imgWidth) {
     if (input.length == INPUT_SIZE && target.length == OUTPUT_SIZE) {
+      input = rotateArrayQuarter(input,imgWidth,imgWidth);
+      input = flipArray(input,imgWidth,imgWidth);
       feedForward(input);
       backpropError(target);
       update(learningRate);
     }
   }
   
-  void train(double[] input, int target, double learningRate) {
-     train(input, createLabels(target, 10), learningRate);
+  void train(double[] input, int target, double learningRate, int imgWidth) {
+     train(input, createLabels(target, 10), learningRate, imgWidth);
   }
   
 
@@ -125,10 +129,6 @@ static class NeuralNetwork implements Serializable {
 
   double sigmoid(double num) {
     return 1d/(1+Math.exp(-num));
-  }
-
-  double ReLU(double num) {
-    return Math.max(0, num);
   }
 
   double[] createRandomArray(int size, double lower, double upper) {

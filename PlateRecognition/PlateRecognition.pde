@@ -18,7 +18,7 @@ void setup() {
   size(700, 700);
   NeuralNetwork numberNet;
   NeuralNetwork letterNet;
-
+  
   //background(0);
   String path = dataPath("");
   ImageUtils.main = this;
@@ -42,7 +42,7 @@ void setup() {
     letterNet = NeuralNetwork.loadNetwork(path + "\\networks\\letterNet.txt");
     numberNet = NeuralNetwork.loadNetwork(path + "\\networks\\numberNet.txt");
 
-    PImage test = loadImage(path+"\\plates\\AM.jpg");
+    PImage test = loadImage(path+"\\plates\\CU.jpg");
 
     ArrayList <PImage> images = Segmentation.blobSegmentation(test, this, numberNet, letterNet, this);
 
@@ -94,28 +94,29 @@ double[] useNeuralNetwork(PImage _img, NeuralNetwork network) {
    */
 
   // The images must be drawn on the screeen if they are to be rotated and flipped
-  translate(width/2, height/2);
-  rotate(-PI/2);
-  scale(-1, 1);
-  translate(-width/2, -height/2);
+  
+  //translate(width/2, height/2);
+  //rotate(-PI/2);
+  //scale(-1, 1);
+  //translate(-width/2, -height/2);
 
-  image(img, 0, 0);
+  //image(img, 0, 0);
 
-  translate(width/2, height/2);
-  scale(-1, 1);
-  rotate(PI/2);
-  translate(-width/2, -height/2);
+  //translate(width/2, height/2);
+  //scale(-1, 1);
+  //rotate(PI/2);
+  //translate(-width/2, -height/2);
 
-  loadPixels();
-  background(0);
+  //loadPixels();
+  //background(0);
 
-  img = createImage(width, height, ALPHA);
-  img.pixels = pixels;
-  img = ImageUtils.cropBorders(img, this); 
-  img = ImageUtils.fitInto(img, 20, 20, color(0), this);
-  img = ImageUtils.centerWithMassInto(img, 28, 28, color(0), this);
+  //img = createImage(width, height, ALPHA);
+  //img.pixels = pixels;
+  //img = ImageUtils.cropBorders(img, this); 
+  //img = ImageUtils.fitInto(img, 20, 20, color(0), this);
+  //img = ImageUtils.centerWithMassInto(img, 28, 28, color(0), this);
 
-  image(img, 0, 0);
+  //image(img, 0, 0);
 
   double[] pixelList = new double[img.pixels.length];
 
@@ -268,3 +269,28 @@ String recognizeImages(ArrayList <PImage> images, NeuralNetwork numberNet, Neura
 int alphaToPixel(int gray) {
   return color(gray);
 }
+
+ static double[] rotateArrayQuarter(double[] arr, int arrWidth, int arrHeight) {
+    double[] output = new double[arr.length];
+    for(int col = arrWidth-1; col>=0; col--) {
+     for(int row = 0; row<arrHeight; row++) {
+       output[(arrWidth-1-col)*arrWidth+row] = arr[arr.length + col - arrWidth*(arrHeight-row)];
+     }
+    }
+    return output;
+  }
+  
+ static double[] flipArray(double[] arr, int arrWidth, int arrHeight) {
+    double[] output = new double[arr.length];
+    
+    for(int row = 0; row<arrHeight; row++) {
+     int col = 0;
+      while(col<arrWidth) {
+        output[row*arrWidth+col] = arr[(row+1)*arrWidth-1-col];
+        col++;
+      }
+     
+    }
+    
+    return output;
+  }
