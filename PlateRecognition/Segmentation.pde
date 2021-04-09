@@ -1,4 +1,4 @@
-static class Segmentation { //<>//
+static class Segmentation {  //<>//
   static ArrayList <PImage> plateSegmentation(PImage plate, PApplet outer) {
     // based on Koo et al, 2009
 
@@ -93,7 +93,7 @@ static class Segmentation { //<>//
     //outer.image(plate, 0, 250);
     plate = ImageUtils.cropBorders(plate, outer);
 
-
+    
     return plate;
   }
 
@@ -217,7 +217,6 @@ static class Segmentation { //<>//
         PImage img = fullBlob.img.get(0, 0, splitRow, fullBlob.img.height );
 
         Picture leftPicture = new Picture(img, new int[]{fullBlob.boundingBox[0], fullBlob.boundingBox[1], fullBlob.boundingBox[0]+splitRow, fullBlob.boundingBox[3]});
-
 
         // create the right picture
         img = fullBlob.img.get(splitRow, 0, fullBlob.img.width-splitRow, fullBlob.img.height);

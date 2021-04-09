@@ -1,4 +1,4 @@
-import java.io.*; //<>//
+import java.io.*; //<>// //<>// //<>//
 import java.util.LinkedList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -8,6 +8,8 @@ DataSet trainingLettersSet;
 DataSet testingLettersSet;
 DataSet trainingDigitsSet;
 DataSet testingDigitsSet;
+
+ArrayList<AnalysisResult> results = new ArrayList<AnalysisResult>();
 static PApplet p = new PApplet();
 
 ArrayList<PVector> points;
@@ -43,6 +45,7 @@ void setup() {
     //letterNet = NeuralNetwork.loadNetwork(path + "\\networks\\letterNet.txt");
     //numberNet = NeuralNetwork.loadNetwork(path + "\\networks\\numberNet.txt");
 
+
     //PImage test = loadImage(path+"\\plates\\CU.jpg");
 
     //ArrayList <PImage> images = Segmentation.blobSegmentation(test, this, numberNet, letterNet, this);
@@ -58,19 +61,76 @@ void setup() {
     //  text(readPlate.charAt(i), i*80, 145);
     //}
 
+   // selectFile();
+    
+    //PImage test = loadImage(path+"\\plates\\AB.png");
+
+
+
     //exportPicture(test, readPlate);
   }
   catch(Exception e) {
     println(e);
   }
+}
 
-
-  noLoop();
+void draw(){
+  try{
+    println(results.get(0).toString());
+    results.get(0).renderPictures();
+    noLoop();
+  } catch(Exception e){
+    //println(e);
+  }
 }
 
 void exportPicture(PImage plate, String fileName) {
   String path = dataPath("") + "\\exports\\"+fileName+".jpg";
   plate.save(path);
+}
+
+void selectFile() {
+   selectInput("Select a file to process:", "fileSelected"); 
+}
+
+AnalysisResult analyseImage(File selection){
+  String expectedName = selection.getName().replace(".jpg", "");
+  PImage mainPicture = loadImage(selection.getAbsolutePath());
+  String path = dataPath("");
+  mainPicture = loadImage(path+ "\\plates\\"+selection.getName());
+  
+  NeuralNetwork letterNet = null; 
+  NeuralNetwork numberNet = null; 
+  try{
+    letterNet = NeuralNetwork.loadNetwork(path + "\\networks\\letterNet.txt");
+    numberNet = NeuralNetwork.loadNetwork(path + "\\networks\\numberNet.txt");
+  } catch (IOException IOErr){
+    println(IOErr);
+  }catch(ClassNotFoundException classErr){
+    println(classErr);
+  }
+  long time = 0; 
+  ArrayList <PImage> segmentedPictures = null;
+  String foundName = null;
+  
+  try{
+    time = System.nanoTime();
+    segmentedPictures = Segmentation.blobSegmentation(mainPicture, this, numberNet, letterNet, this);
+    foundName = recognizeImages(segmentedPictures, numberNet, letterNet);
+    time = System.nanoTime() - time;
+  } catch(Exception e){
+    println(e);
+  }
+  
+  return new AnalysisResult(expectedName, foundName, time, mainPicture, segmentedPictures);
+}
+
+void fileSelected(File selection) {
+  if (selection == null) {
+    println("Window was closed or the user hit cancel");
+  } else {
+    results.add(analyseImage(selection));
+  } 
 }
 
 
@@ -81,7 +141,6 @@ double[] useNeuralNetwork(String path, NeuralNetwork network) {
 
 double[] useNeuralNetwork(PImage _img, NeuralNetwork network) {
   PImage img = _img.get();
-
 
   /*
   this might become part of another step
@@ -127,7 +186,6 @@ double[] useNeuralNetwork(PImage _img, NeuralNetwork network) {
   double[] guess = network.feedForward(pixelList, 0);
   return new double[] {getIndexOfLargest(guess), guess[getIndexOfLargest(guess)]};
 }
-
 
 // https://stackoverflow.com/questions/10813154/how-do-i-convert-a-number-to-a-letter-in-java
 String getCharForNumber(int i) {
