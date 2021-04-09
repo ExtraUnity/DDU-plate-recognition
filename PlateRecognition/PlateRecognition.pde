@@ -42,7 +42,7 @@ void setup() {
     letterNet = NeuralNetwork.loadNetwork(path + "\\networks\\letterNet.txt");
     numberNet = NeuralNetwork.loadNetwork(path + "\\networks\\numberNet.txt");
 
-    PImage test = loadImage(path+"\\plates\\AB.png");
+    PImage test = loadImage(path+"\\plates\\AM.jpg");
 
     ArrayList <PImage> images = Segmentation.blobSegmentation(test, this, numberNet, letterNet, this);
 
