@@ -34,7 +34,7 @@ static class NeuralNetwork implements Serializable {
   }
 
   double[] feedForward(double[] input, float dropoutRatio) {
-  if (input.length != this.INPUT_SIZE) {
+    if (input.length != this.INPUT_SIZE) {
       return null;
     }
     this.activation[0] = input;
@@ -62,34 +62,31 @@ static class NeuralNetwork implements Serializable {
   }
 
   void train(DataSet set, int loops, int batchSize) {
-    
+
     for (int i = 0; i<loops; i++) {
       DataSet batch = set.getBatch(batchSize);
       for (int b = 0; b<batchSize-1; b++) {
-        int imageWidth = (int)sqrt(batch.data.get(b)[0].length);
-        this.train(batch.data.get(b)[0], batch.data.get(b)[1], 0.3, imageWidth);
+        this.train(batch.data.get(b)[0], batch.data.get(b)[1], 0.3);
       }
       println(meanSquaredError(batch));
     }
   }
 
-  void train(double[] input, double[] target, double learningRate, int imgWidth) {
+  void train(double[] input, double[] target, double learningRate) {
     if (input.length == INPUT_SIZE && target.length == OUTPUT_SIZE) {
-      input = rotateArrayQuarter(input,imgWidth,imgWidth);
-      input = flipArray(input,imgWidth,imgWidth);
       feedForward(input, 0.25);
       backpropError(target);
       update(learningRate);
     }
   }
-  
-  void train(double[] input, int target, double learningRate, int imgWidth) {
-     train(input, createLabels(target, 10), learningRate, imgWidth);
+
+  void train(double[] input, int target, double learningRate) {
+    train(input, createLabels(target, 10), learningRate);
   }
-  
+
 
   double meanSquaredError(double[] input, double[] target) {
-    feedForward(input,0.25);
+    feedForward(input, 0.25);
     double v = 0;
     for (int i = 0; i<target.length; i++) {
       v+=(target[i]-activation[NETWORK_SIZE-1][i])*(target[i]-activation[NETWORK_SIZE-1][i]);
