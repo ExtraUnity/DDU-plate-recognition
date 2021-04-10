@@ -1,4 +1,4 @@
-static class Segmentation {  //<>// //<>//
+static class Segmentation {  //<>//
   static ArrayList <PImage> plateSegmentation(PImage plate, PApplet outer) {
     // based on Koo et al, 2009
 
@@ -150,7 +150,7 @@ static class Segmentation {  //<>// //<>//
 
       confidences.add(Math.max(numberConfidence[1], letterConfidence[1]));
     }
-    println(confidences);
+    
     while (output.size()>7) {  
       double[] confidencesa = new double[confidences.size()];
       for (int i = 0; i<confidences.size(); i++) confidencesa[i] = (double) confidences.get(i);
