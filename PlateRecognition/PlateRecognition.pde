@@ -22,6 +22,7 @@ void setup() {
   NeuralNetwork numberNet;
   NeuralNetwork letterNet;
 
+
   //background(0);
   String path = dataPath("");
   ImageUtils.main = this;

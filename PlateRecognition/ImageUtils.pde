@@ -203,10 +203,32 @@ static class ImageUtils {
     return out;
   }
 
-
   static int myColor(int grayscale) { // converts a single grayscale value to the color dataformat in processing.
     String binary = String.format("%8s", Integer.toBinaryString(grayscale)).replace(' ', '0');
     String binaryCombined = ("11111111"+binary+binary+binary);
     return Integer.parseUnsignedInt(binaryCombined, 2);
   }
+
+  // inspired by Edge Detection example in processing
+  static PImage cannyEdgeDetector(PImage img, PApplet outer) {
+    return null;
+  }
+
+  static PImage sobleFilter(PImage img, PApplet outer) {
+    return null;
+  }
+
+  static class Edge{ // a polar vector. Stores the intencity of the edge and its direction, in 8 directions. 
+    int grayscale; 
+    float direction;
+    Edge(int gradientX, int gradientY) {
+      this.grayscale =(int) sqrt(gradientX*gradientX + gradientY*gradientY);
+      
+      float fullAngle = atan2(gradientY,gradientX); // from -pi to pi
+      this.direction = round(fullAngle / (PI/4));
+    }
+  }
+  
+
+  
 }
