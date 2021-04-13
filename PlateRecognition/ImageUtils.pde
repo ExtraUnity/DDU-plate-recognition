@@ -212,8 +212,8 @@ static class ImageUtils {
 
   // inspired by Edge Detection example in processing
   static PImage cannyEdgeDetector(PImage img, PApplet outer) {
-    img.filter(BLUR, 1.5);
-    
+    img.filter(BLUR, 1.4);
+
     Edge[] edges = sobelFilter(img, outer);
 
     PImage thinEdges = edgeThinning(img, edges, outer);
@@ -291,10 +291,10 @@ static class ImageUtils {
       for (int col = 0; col < output.width; col++) {
         int outputIndex = row *output.width + col;
         int imgIndex = (row+1) * (img.width) + (col+1);
-        
+
         if (thresholds[imgIndex] == Threshold.STRONG) output.pixels[outputIndex] = main.alphaToPixel(255);
         if (thresholds[imgIndex] == Threshold.NONE) output.pixels[outputIndex] = main.alphaToPixel(0);
-        
+
         if (thresholds[imgIndex] == Threshold.WEAK) {
           for (int dy = -1; dy<=1; dy++) {
             for (int dx = -1; dx<=1; dx++) {
@@ -308,7 +308,7 @@ static class ImageUtils {
         }
       }
     }
-    
+
     return output;
   }
 
@@ -383,9 +383,18 @@ static class ImageUtils {
         return 3;
 
       default:
-        println("default case");
         return -1;
       }
     }
+  }
+
+  static int[] plateLocation(PImage img, PApplet outer) {
+    // TODO: implement this
+    
+    return new int[]{0, 0, 0, 0}; // upper left x, y;  lower right x, y.
+  }
+
+ static boolean localMinima(int[] a, int index) {
+    return a[index] <=  a[index-1] && a[index] <=  a[index+1];
   }
 }
