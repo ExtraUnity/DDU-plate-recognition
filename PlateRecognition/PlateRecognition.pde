@@ -63,7 +63,15 @@ void setup() {
     // selectFile();
 
     //PImage test = loadImage(path+"\\plates\\AB.png");
-
+    background(255);
+    test = loadImage(path+"\\plates\\BS35597.jpg");
+    test.resize(700, 0);
+    test.filter(GRAY);
+    image(test, 0, 0);
+    PImage p = ImageUtils.cannyEdgeDetector(test, this);
+    image(p, 0, test.height);
+    
+    
 
 
     //exportPicture(test, readPlate);
