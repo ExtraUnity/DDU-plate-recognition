@@ -44,7 +44,7 @@ void setup() {
     //trainData(50, 50, 1200, "numberNet", 5, trainingDigitsSet, testingDigitsSet, numberNet);
     //testData(numberNet, testingDigitsSet);
 
-
+/*
     PImage test = loadImage(path+"\\plates\\CU.jpg");
 
     ArrayList <PImage> images = Segmentation.blobSegmentation(test, this, numberNet, letterNet, this);
@@ -61,19 +61,23 @@ void setup() {
     }
 
     // selectFile();
-
+*/
     //PImage test = loadImage(path+"\\plates\\AB.png");
     background(255);
-    test = loadImage(path+"\\plates\\BS35597.jpg");
+    PImage test;
+    test = loadImage(path+"\\plates\\CW450777.jpg");
     test.resize(700, 0);
     test.filter(GRAY);
-    image(test, 0, 0);
     PImage p = ImageUtils.cannyEdgeDetector(test, this);
-    image(p, 0, test.height);
+    image(p, 0, 0);
+    int[] coors = ImageUtils.plateLocation(p, this);
+
+    rectMode(CORNERS);
+    noFill();
+    rect(coors[0], coors[1], coors[2], coors[3]);
+    rectMode(CORNER);
     
     
-
-
     //exportPicture(test, readPlate);
   }
   catch(Exception e) {
@@ -346,6 +350,12 @@ int getIndexOfLargest(float[] a) {
   return getIndexOfLargest(temp);
 }
 
+int getIndexOfLargest(int[] a) {
+  double[] temp = new double[a.length];
+  for (int i = 0; i<temp.length; i++) temp[i] = (double) a[i];
+  return getIndexOfLargest(temp);
+}
+
 int getIndexOfSmallest(double[] a) {
   int indexMin = 0;
   for (int i = 0; i<a.length; i++) {
@@ -353,6 +363,7 @@ int getIndexOfSmallest(double[] a) {
   }
   return indexMin;
 }
+
 
 
 String recognizeImages(ArrayList <PImage> images, NeuralNetwork numberNet, NeuralNetwork letterNet) {
