@@ -31,7 +31,7 @@ class AnalysisResult{
       if(expectedName.charAt(i) == foundName.charAt(i)) correct++;
     }
     if (correct == 0) return 0;
-    return total/correct;
+    return correct/total*100;
   }
   
   void renderPictures(){
