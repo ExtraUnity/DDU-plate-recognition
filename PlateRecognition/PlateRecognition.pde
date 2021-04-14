@@ -1,4 +1,4 @@
-import java.io.*; //<>// //<>//
+import java.io.*; //<>//
 import java.util.LinkedList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -43,12 +43,9 @@ void setup() {
 
     letterNet = NeuralNetwork.loadNetwork(path + "\\networks\\letterNet.txt");
     numberNet = NeuralNetwork.loadNetwork(path + "\\networks\\numberNet.txt");
-
+    
     selectFile();
     
-    //PImage test = loadImage(path+"\\plates\\AB.png");
-
-
     //exportPicture(test, readPlate);
   }
   catch(Exception e) {
@@ -291,9 +288,8 @@ int getIndexOfSmallest(double[] a) {
   return indexMin;
 }
 
-
 String recognizeImages(ArrayList <PImage> images, NeuralNetwork numberNet, NeuralNetwork letterNet) {
-  // Asume the format is AA 99 999
+  // Assume the format is two lettes at the start, and numbers everywhere else
   String outputs = ""; 
 
   for (int i = 0; i<images.size(); i++) {
@@ -302,7 +298,7 @@ String recognizeImages(ArrayList <PImage> images, NeuralNetwork numberNet, Neura
     } else {
       outputs += str((int)useNeuralNetwork(images.get(i), numberNet)[0]);
     }
-  }
+  }  
   return outputs;
 }
 
