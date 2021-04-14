@@ -203,10 +203,198 @@ static class ImageUtils {
     return out;
   }
 
-
   static int myColor(int grayscale) { // converts a single grayscale value to the color dataformat in processing.
     String binary = String.format("%8s", Integer.toBinaryString(grayscale)).replace(' ', '0');
     String binaryCombined = ("11111111"+binary+binary+binary);
     return Integer.parseUnsignedInt(binaryCombined, 2);
+  }
+
+
+  // inspired by Edge Detection example in processing
+  static PImage cannyEdgeDetector(PImage img, PApplet outer) {
+    img.filter(BLUR, 1.4);
+
+    Edge[] edges = sobelFilter(img, outer);
+
+    PImage thinEdges = edgeThinning(img, edges, outer);
+    PImage output = hysteresis(thinEdges, 0.1, 0.3, outer); // wiki recommends 0.1 and 0.3
+
+    return output;
+  }
+
+  static PImage edgeThinning(PImage img, Edge[] edges, PApplet outer) {
+    PImage output = outer.createImage(img.width-4, img.height-4, ARGB);
+
+    for (int row = 0; row < output.height; row++) {
+      for (int col = 0; col < output.width; col++) {
+        Edge center = edges[(row+1)*(output.width+2) + (col+1)];
+        Edge positive = null;
+        Edge negative = null;
+
+
+        switch(center.direction) {
+        case 0:
+          positive = edges[(row+1)*(output.width+2) + (col+2)];
+          negative = edges[(row+1)*(output.width+2) + (col)];        
+          break; 
+
+        case 1:
+          positive = edges[(row+2)*(output.width+2) + (col+2)];
+          negative = edges[(row)*(output.width+2) + (col)];        
+          break;
+
+        case 2:
+          positive = edges[(row+2)*(output.width+2) + (col+1)];
+          negative = edges[(row)*(output.width+2) + (col+1)];
+          break;
+
+        case 3:
+          positive = edges[(row+2)*(output.width+2) + (col)];
+          negative = edges[(row)*(output.width+2) + (col+2)];        
+          break;         
+
+        default:
+          positive = center;
+          negative = center;
+          break;
+        }
+
+        int index = row * output.width + col;
+
+        if (center.magnitude > positive.magnitude && center.magnitude > negative.magnitude) {
+          output.pixels[index] = main.alphaToPixel(center.magnitude);
+        } else {
+          center.magnitude = 0;
+          output.pixels[index] = main.alphaToPixel(0);
+        }
+      }
+    }
+    return output;
+  }
+
+
+  static enum Threshold {
+    STRONG, WEAK, NONE
+  }
+
+  static PImage hysteresis(PImage img, float lowThreshold, float highThreshold, PApplet outer) {
+    PImage output = outer.createImage(img.width-2, img.height-2, ARGB);
+    Threshold[] thresholds = new Threshold[img.pixels.length];
+
+    for (int i = 0; i < img.pixels.length; i++) {
+      if (outer.red(img.pixels[i])/255d > highThreshold) thresholds[i] = Threshold.STRONG;
+      else if (outer.red(img.pixels[i])/255d < lowThreshold) thresholds[i] = Threshold.NONE;
+      else thresholds[i] = Threshold.WEAK;
+    }
+
+    for (int row = 0; row < output.height; row++) {
+      for (int col = 0; col < output.width; col++) {
+        int outputIndex = row *output.width + col;
+        int imgIndex = (row+1) * (img.width) + (col+1);
+
+        if (thresholds[imgIndex] == Threshold.STRONG) output.pixels[outputIndex] = main.alphaToPixel(255);
+        if (thresholds[imgIndex] == Threshold.NONE) output.pixels[outputIndex] = main.alphaToPixel(0);
+
+        if (thresholds[imgIndex] == Threshold.WEAK) {
+          for (int dy = -1; dy<=1; dy++) {
+            for (int dx = -1; dx<=1; dx++) {
+              if (thresholds[imgIndex +dy *img.width + dx] == Threshold.STRONG) {
+                output.pixels[outputIndex] = main.alphaToPixel(255);
+                break;
+              }
+            }
+          }
+          output.pixels[outputIndex] = main.alphaToPixel(0);
+        }
+      }
+    }
+
+    return output;
+  }
+
+
+  static Edge[] sobelFilter(PImage img, PApplet outer) {
+    int [][] xKernel= new int[][] { {1, 0, -1}, 
+      {2, 0, -2}, 
+      {1, 0, -1}};
+
+    int [][] yKernel= new int[][] { {1, 2, 1}, 
+      {0, 0, 0}, 
+      {-1, -2, -1}};   
+
+    int lengthOut = img.pixels.length - 2*img.height - 2*(img.width-2);
+
+    Edge[] edges = new Edge[lengthOut];
+    PImage output = outer.createImage(img.width-2, img.height-2, ARGB);
+
+    for (int row = 1; row < img.height-1; row++) {
+      for (int col = 1; col < img.width-1; col++) {
+        int xSum = 0;
+        int ySum = 0;
+        for (int kRow = -1; kRow <=1; kRow++ ) {
+          for (int kCol = -1; kCol <= 1; kCol++) {
+            float grayValue = outer.red(img.pixels[(row+kRow) * img.width + (col + kCol)]);
+            xSum += grayValue * xKernel[kRow+1][kCol+1];
+            ySum += grayValue * yKernel[kRow+1][kCol+1];
+          }
+        }
+
+        Edge temp = new Edge(xSum, ySum);
+        edges[(row-1) * (img.width-2) + (col-1)] = temp;
+        output.pixels[(row-1) * (img.width-2) + (col-1)] = main.alphaToPixel(temp.magnitude); //
+      }
+    }
+
+    //outer.image(output, 0, 200);    
+
+    return edges;
+  }
+
+
+  static class Edge { // a polar vector. Stores the intencity of the edge and its direction, in 8 directions. 
+    int magnitude; 
+    int direction;
+    Edge(int gradientX, int gradientY) {
+      this.magnitude = (int) sqrt(gradientX*gradientX + gradientY*gradientY);
+
+      float fullAngle = atan2(gradientY, gradientX); // from -pi to pi
+      if (fullAngle < 0) fullAngle += PI;
+      this.direction = roundDirection((int)(fullAngle / (PI/8)));
+      //if(fullAngle != 0) println(fullAngle, fullAngle / (PI/8), this.direction);
+    }
+
+    int roundDirection(int partialAngle) {
+      switch(partialAngle) {
+      case 0:
+      case 7:
+      case 8:
+        return 0;
+
+      case 1:
+      case 2:
+        return 1;
+
+      case 3:
+      case 4:
+        return 2;
+
+      case 5:
+      case 6:
+        return 3;
+
+      default:
+        return -1;
+      }
+    }
+  }
+
+  static int[] plateLocation(PImage img, PApplet outer) {
+    // TODO: implement this
+    
+    return new int[]{0, 0, 0, 0}; // upper left x, y;  lower right x, y.
+  }
+
+ static boolean localMinima(int[] a, int index) {
+    return a[index] <=  a[index-1] && a[index] <=  a[index+1];
   }
 }

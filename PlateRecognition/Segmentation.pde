@@ -1,4 +1,4 @@
-static class Segmentation { //<>// //<>//
+static class Segmentation {  //<>//
   static ArrayList <PImage> plateSegmentation(PImage plate, PApplet outer) {
     // based on Koo et al, 2009
 
@@ -82,7 +82,7 @@ static class Segmentation { //<>// //<>//
     plate.resize(700, 0);
     plate.filter(GRAY);
     plate.filter(BLUR, 1);
-    
+
     //plate = ImageUtils.contrastExtension(plate,outer);
     plate = ImageUtils.filterImageByMedian(plate, outer);
     plate.resize(plate.width+1, plate.height+1);
@@ -93,7 +93,7 @@ static class Segmentation { //<>// //<>//
     //outer.image(plate, 0, 250);
     plate = ImageUtils.cropBorders(plate, outer);
 
-    
+
     return plate;
   }
 
@@ -105,13 +105,15 @@ static class Segmentation { //<>// //<>//
     ArrayList <Picture> blobs = connectedComponentAnalysis(plate, outer);
 
     ArrayList <Picture> nonCharBlobs = new ArrayList <Picture>();
-    blobs = blobSplit(blobs, outer);
+
     for (int i = 0; i<blobs.size(); i++) {
       if (!isCharacterImage(blobs.get(i), plate, outer)) nonCharBlobs.add(blobs.get(i));
     }
 
     blobs.removeAll(nonCharBlobs);
-    blobs = blobSplit(blobs, outer);
+    blobs = blobSplit(blobs, plate, outer);
+
+    //blobs = blobSplit(blobs, outer);
     blobs = doubleLineSort(plate, blobs, outer);
 
     //int k = 4;
@@ -139,6 +141,7 @@ static class Segmentation { //<>// //<>//
     for (Picture p : blobs) output.add(p.img);
     //println();
     ArrayList<Double> confidences = new ArrayList<Double>();
+
     for (PImage p : output) {
 
       //THIS GIVES THE EXCEPTION: java.lang.IllegalArgumentException: Width (0) and height (43) cannot be <= 0
@@ -147,7 +150,7 @@ static class Segmentation { //<>// //<>//
 
       confidences.add(Math.max(numberConfidence[1], letterConfidence[1]));
     }
-
+    
     while (output.size()>7) {  
       double[] confidencesa = new double[confidences.size()];
       for (int i = 0; i<confidences.size(); i++) confidencesa[i] = (double) confidences.get(i);
@@ -192,6 +195,7 @@ static class Segmentation { //<>// //<>//
       if (p.center[1] < 0.5 * plate.height) top.add(p);
       else bottom.add(p);
     }
+
     Collections.sort(top);
     Collections.sort(bottom);
     top.addAll(bottom);
@@ -199,7 +203,7 @@ static class Segmentation { //<>// //<>//
     return top;
   }
 
-  static ArrayList <Picture> blobSplit(ArrayList <Picture> blobs, PApplet outer) {
+  static ArrayList <Picture> blobSplit(ArrayList <Picture> blobs, PImage plate, PApplet outer) {
     int[] widths = new int[blobs.size()];
 
     for (int i = 0; i<widths.length; i++) {
@@ -223,9 +227,11 @@ static class Segmentation { //<>// //<>//
         Picture rightPicture = new Picture(img, new int[]{fullBlob.boundingBox[0]+splitRow, fullBlob.boundingBox[1], fullBlob.boundingBox[2], fullBlob.boundingBox[3]});
 
         // remove the old picture
-        blobs.add(leftPicture);
-        blobs.add(rightPicture);
-        blobs.remove(i);
+        if (isCharacterImage(leftPicture, plate, outer) && isCharacterImage(rightPicture, plate, outer)) {
+          blobs.add(leftPicture);
+          blobs.add(rightPicture);
+          blobs.remove(i);
+        }
       }
     }
     return blobs;

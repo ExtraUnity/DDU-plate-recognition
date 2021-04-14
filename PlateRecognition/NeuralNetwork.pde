@@ -33,27 +33,36 @@ static class NeuralNetwork implements Serializable {
     }
   }
 
-  double[] feedForward(double[] input) {
+  double[] feedForward(double[] input, float dropoutRatio) {
     if (input.length != this.INPUT_SIZE) {
       return null;
     }
     this.activation[0] = input;
 
     for (int l = 1; l<NETWORK_SIZE; l++) { //all layers, l
-      for (int j = 0; j<LAYER_SIZES[l]; j++) {//all neurons in layer, j
-        double sum = bias[l][j]; //initial value is just the bias
+      int[] dropouts = null;
+      if (l!=NETWORK_SIZE-1) {
+        dropouts = getRandomValues(0, LAYER_SIZES[l]-1, (int)(LAYER_SIZES[l]*dropoutRatio));  //25% dropout, to discourage memorization of training data
+      }
+      for (int j = 0; j<LAYER_SIZES[l]; j++) {//all neurons in layer
+        if (!containsValue(dropouts, j)) {
+          double sum = bias[l][j]; //initial value is just the bias
 
-        for (int k = 0; k<LAYER_SIZES[l-1]; k++) {//all neurons in previous layer, k
-          sum += activation[l-1][k] * weights[l][j][k]; //activation of previous neuron times weights from previous to current neuron
+          for (int k = 0; k<LAYER_SIZES[l-1]; k++) {//all neurons in previous layer
+            sum += activation[l-1][k] * weights[l][j][k]; //activation of previous neuron times weights from previous to current neuron
+          }
+
+          this.activation[l][j] = sigmoid(sum);
+        } else {
+          this.activation[l][j] = 0;
         }
-
-        this.activation[l][j] = sigmoid(sum); //ReLU or sigmoid can be used here.
       }
     }
-    return this.activation[NETWORK_SIZE-1];
+    return activation[NETWORK_SIZE-1];
   }
 
   void train(DataSet set, int loops, int batchSize) {
+
     for (int i = 0; i<loops; i++) {
       DataSet batch = set.getBatch(batchSize);
       for (int b = 0; b<batchSize-1; b++) {
@@ -65,19 +74,19 @@ static class NeuralNetwork implements Serializable {
 
   void train(double[] input, double[] target, double learningRate) {
     if (input.length == INPUT_SIZE && target.length == OUTPUT_SIZE) {
-      feedForward(input);
+      feedForward(input, 0.25);
       backpropError(target);
       update(learningRate);
     }
   }
-  
+
   void train(double[] input, int target, double learningRate) {
-     train(input, createLabels(target, 10), learningRate);
+    train(input, createLabels(target, 10), learningRate);
   }
-  
+
 
   double meanSquaredError(double[] input, double[] target) {
-    feedForward(input);
+    feedForward(input, 0.25);
     double v = 0;
     for (int i = 0; i<target.length; i++) {
       v+=(target[i]-activation[NETWORK_SIZE-1][i])*(target[i]-activation[NETWORK_SIZE-1][i]);
@@ -125,10 +134,6 @@ static class NeuralNetwork implements Serializable {
 
   double sigmoid(double num) {
     return 1d/(1+Math.exp(-num));
-  }
-
-  double ReLU(double num) {
-    return Math.max(0, num);
   }
 
   double[] createRandomArray(int size, double lower, double upper) {
