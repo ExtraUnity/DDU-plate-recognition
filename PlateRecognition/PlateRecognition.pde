@@ -12,7 +12,7 @@ DataSet trainingLettersSet;
 DataSet testingLettersSet;
 DataSet trainingDigitsSet;
 DataSet testingDigitsSet;
-
+Button button;
 ArrayList<AnalysisResult> results = new ArrayList<AnalysisResult>();
 static PApplet p = new PApplet();
 
@@ -22,7 +22,7 @@ double[] drawNum;
 int debugCounter = 0; 
 
 void setup() {
-  size(700, 700);
+  size(900, 700);
   NeuralNetwork numberNet;
   NeuralNetwork letterNet;
 
@@ -50,8 +50,8 @@ void setup() {
 
 
     background(255);
-
-    selectFile();
+    button = new Button(800,250,100,30, "Select a file");
+    
 
   }
   catch(Exception e) {
@@ -60,6 +60,7 @@ void setup() {
 }
 
 void draw() {
+  button.render();
   try {
     println(results.get(0).toString());
     results.get(0).renderPictures();
@@ -68,6 +69,10 @@ void draw() {
   catch(Exception e) {
     //println(e);
   }
+}
+
+void mousePressed() {
+  if(button.pressed()) selectFile();
 }
 
 void exportPicture(PImage plate, String fileName) {
@@ -101,12 +106,23 @@ AnalysisResult analyseImage(File selection) {
   Picture plate = null;
   ArrayList <PImage> segmentedPictures = null;
   String foundName = null;
-
+  String format = "AA00000";
+  String textColor = "black";
+  
   try {
+    
+    String[] config = loadStrings("../config.ini");
+    for(String s : config) {
+     if(s.startsWith("format")) {
+       format = s.split("=")[1];
+     } else if(s.startsWith("textcolor")) {
+       textColor = s.split("=")[1]; 
+     }
+    }
     time = System.nanoTime();
-    plate = plateLocalisation(mainPicture);
+    plate = plateLocalisation(mainPicture, textColor);
     segmentedPictures = Segmentation.blobSegmentation(plate.img, this, numberNet, letterNet, this);
-    foundName = recognizeImages(segmentedPictures, numberNet, letterNet);
+    foundName = recognizeImages(segmentedPictures, numberNet, letterNet, format);
     time = System.nanoTime() - time;
   } 
   catch(Exception e) {
@@ -342,13 +358,12 @@ int getIndexOfSmallest(double[] a) {
   return indexMin;
 }
 
-String recognizeImages(ArrayList <PImage> images, NeuralNetwork numberNet, NeuralNetwork letterNet) {
+String recognizeImages(ArrayList <PImage> images, NeuralNetwork numberNet, NeuralNetwork letterNet, String format) {
   // Assume the format is two lettes at the start, and numbers everywhere else
   String outputs = ""; 
-
   for (int i = 0; i<images.size(); i++) {
-    if (i <2) {
-      outputs += getCharForNumber((int)useNeuralNetwork(images.get(i), letterNet)[0] );
+    if(isAlphabetical(str((format.charAt(i))))) {
+     outputs += getCharForNumber((int)useNeuralNetwork(images.get(i), letterNet)[0] );
     } else {
       outputs += str((int)useNeuralNetwork(images.get(i), numberNet)[0]);
     }
@@ -417,11 +432,11 @@ static boolean containsValue(int[] a, int n) {
   return false;
 }
 
-Picture plateLocalisation(PImage orgImg) {
-  return plateLocalisation(orgImg, 0.005, 0.4, 3, 5);
+Picture plateLocalisation(PImage orgImg, String textColor) {
+  return plateLocalisation(orgImg, 0.005, 0.4, 3, 5, textColor);
 }
 
-Picture plateLocalisation(PImage orgImg, double minArea, double percentBlack, double aspectLow, double aspectHigh) {
+Picture plateLocalisation(PImage orgImg, double minArea, double percentBlack, double aspectLow, double aspectHigh, String textColor) {
   orgImg.resize(700, 0);
   int orgImgHeight = orgImg.height;
   orgImg = orgImg.get(0, orgImg.height/3, orgImg.width, 2*orgImg.height/3);
@@ -430,11 +445,11 @@ Picture plateLocalisation(PImage orgImg, double minArea, double percentBlack, do
   blurImg.filter(GRAY);
   blurImg.filter(BLUR, 1.4);
   blurImg.filter(THRESHOLD, 0.7);
-  blurImg.filter(INVERT);        
-
+  if(textColor.equals("black")) blurImg.filter(INVERT);       
 
   ArrayList<Picture> components = Segmentation.connectedComponentAnalysis(blurImg, this);
   ArrayList<Picture> removes = new ArrayList<Picture>();
+  println(components.size());
   for (int i = 0; i<components.size(); i++) {
     Picture p = components.get(i);
     if (componentTooSmall(p, blurImg, minArea) || foregroundAreaTooSmall(p, percentBlack) || aspectIntervalWrong(p, aspectLow, aspectHigh)) {
@@ -442,12 +457,13 @@ Picture plateLocalisation(PImage orgImg, double minArea, double percentBlack, do
     }
   }
   components.removeAll(removes);
+  println(components.size());
   int i = 0;
   Picture plate = components.get(i);
   PImage orgPlate = orgImg.get(components.get(i).boundingBox[0], components.get(i).boundingBox[1], components.get(i).width, components.get(i).height);
   plate.img = orgPlate;
   plate.boundingBox = new int[]{plate.boundingBox[0],plate.boundingBox[1]+orgImgHeight/3,plate.boundingBox[2],plate.boundingBox[3]+orgImgHeight/3};
-
+  
   return plate;
 }
 
@@ -461,4 +477,8 @@ boolean foregroundAreaTooSmall(Picture p, double percentBlack) {
 
 boolean aspectIntervalWrong(Picture p, double lower, double upper) {
   return p.img.width/ (double)p.img.height > upper || p.img.width/ (double)p.img.height < lower;
+}
+
+boolean isAlphabetical(String c) {
+  return c.matches("[a-zA-Z]+"); //taken from https://stackoverflow.com/questions/5238491/check-if-string-contains-only-letters/29836318
 }

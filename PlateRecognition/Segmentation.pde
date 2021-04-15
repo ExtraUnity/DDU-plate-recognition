@@ -109,11 +109,19 @@ static class Segmentation {  //<>//
     }
 
     blobs.removeAll(nonCharBlobs);
+    if(blobs.size()==0) {
+     ArrayList<PImage> arr = new ArrayList<PImage>();
+     arr.add(plate);
+     return arr;
+    }
     blobs = blobSplit(blobs, plate, outer);
 
     //blobs = blobSplit(blobs, outer);
     blobs = doubleLineSort(plate, blobs, outer);
+    
 
+    
+//println("hello2");
     //int k = 4;
     //isCharacterImage(blobs.get(k), plate, outer);
     //outer.image(blobs.get(k).img, 0, 0);
