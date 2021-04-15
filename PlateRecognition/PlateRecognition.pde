@@ -1,4 +1,4 @@
-import java.io.*;  //<>//
+import java.io.*; //<>// //<>// //<>//
 import java.util.LinkedList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -34,7 +34,7 @@ void setup() {
 
     letterNet = NeuralNetwork.loadNetwork(path + "\\networks\\letterNet.txt");
     numberNet = NeuralNetwork.loadNetwork(path + "\\networks\\numberNet.txt");
-
+    
     //letterNet = new NeuralNetwork(784, 600, 400, 300, 300, 100, 27);
     //numberNet = new NeuralNetwork(784, 300, 100, 10);
 
@@ -48,39 +48,11 @@ void setup() {
     //trainData(50, 50, 1200, "numberNet", 5, trainingDigitsSet, testingDigitsSet, numberNet);
     //testData(numberNet, testingDigitsSet);
 
-    /*
-    PImage test = loadImage(path+"\\plates\\CU.jpg");
-     
-     ArrayList <PImage> images = Segmentation.blobSegmentation(test, this, numberNet, letterNet, this);
-     
-     String readPlate = recognizeImages(images, numberNet, letterNet);
-     println(readPlate);
-     
-     background(120);
-     for (int i = 0; i < images.size(); i++) {
-     image(images.get(i), i*80, 150);
-     fill(255);
-     textSize(36);
-     text(readPlate.charAt(i), i*80, 145);
-     }
-     
-     // selectFile();
-     */
-    //PImage test = loadImage(path+"\\plates\\AB.png");
+
     background(255);
-    //PImage test;
-    //test = loadImage(path+"\\plates\\DF46626.jpg");
+
     selectFile();
 
-    //image(p.get(0).img,0,0);
-    //image(test,0,0);
-    //rectMode(CORNERS);
-    //noFill();
-    //rect(coors[0], coors[1], coors[2], coors[3]);
-    //rectMode(CORNER);
-
-
-    //exportPicture(test, readPlate);
   }
   catch(Exception e) {
     println(e);
@@ -370,10 +342,8 @@ int getIndexOfSmallest(double[] a) {
   return indexMin;
 }
 
-
-
 String recognizeImages(ArrayList <PImage> images, NeuralNetwork numberNet, NeuralNetwork letterNet) {
-  // Asume the format is AA 99 999
+  // Assume the format is two lettes at the start, and numbers everywhere else
   String outputs = ""; 
 
   for (int i = 0; i<images.size(); i++) {
@@ -382,7 +352,7 @@ String recognizeImages(ArrayList <PImage> images, NeuralNetwork numberNet, Neura
     } else {
       outputs += str((int)useNeuralNetwork(images.get(i), numberNet)[0]);
     }
-  }
+  }  
   return outputs;
 }
 
