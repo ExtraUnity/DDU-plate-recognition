@@ -81,8 +81,6 @@ static class Segmentation {  //<>//
   static PImage preprossing(PImage plate, PApplet outer) {
     plate.resize(700, 0);
     plate.filter(GRAY);
-    plate.filter(BLUR, 1);
-
     //plate = ImageUtils.contrastExtension(plate,outer);
     plate = ImageUtils.filterImageByMedian(plate, outer);
     plate.resize(plate.width+1, plate.height+1);
@@ -150,7 +148,7 @@ static class Segmentation {  //<>//
 
       confidences.add(Math.max(numberConfidence[1], letterConfidence[1]));
     }
-    
+
     while (output.size()>7) {  
       double[] confidencesa = new double[confidences.size()];
       for (int i = 0; i<confidences.size(); i++) confidencesa[i] = (double) confidences.get(i);
@@ -392,28 +390,32 @@ static class Segmentation {  //<>//
     }
     return new int[] {min, max};
   }
+}
 
-  static class Picture implements Comparable<Picture> {
-    PImage img;
-    int[] boundingBox;
-    int[] center;
-    Picture(PImage _img, int[] boundingBox) {
-      this.img = _img;
-      this.boundingBox = boundingBox;
-      this.center = this.center();
-    }
-    Picture() {
-    }
+static class Picture implements Comparable<Picture> {
+  PImage img;
+  int[] boundingBox;
+  int[] center;
+  int width;
+  int height;
+  Picture(PImage _img, int[] boundingBox) {
+    this.img = _img;
+    this.boundingBox = boundingBox;
+    this.width = boundingBox[2]-boundingBox[0];
+    this.height = boundingBox[3]-boundingBox[1];
+    this.center = this.center();
+  }
+  Picture() {
+  }
 
-    public int compareTo(Picture other) {
-      return round(this.boundingBox[0] - other.boundingBox[0]);
-    }
+  public int compareTo(Picture other) {
+    return round(this.boundingBox[0] - other.boundingBox[0]);
+  }
 
-    private int[] center() {
-      int[] output = new int[]{0, 0};
-      output[0] = (this.boundingBox[0] + this.boundingBox[2])/2;
-      output[1] = (this.boundingBox[1] + this.boundingBox[3])/2;
-      return output;
-    }
+  private int[] center() {
+    int[] output = new int[]{0, 0};
+    output[0] = (this.boundingBox[0] + this.boundingBox[2])/2;
+    output[1] = (this.boundingBox[1] + this.boundingBox[3])/2;
+    return output;
   }
 }
