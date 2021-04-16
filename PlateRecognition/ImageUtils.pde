@@ -388,7 +388,7 @@ static class ImageUtils {
     }
   }
 
-  static int[] plateLocation(PImage img, PApplet outer) {
+  static int[] plateLocalization(PImage img, PApplet outer) {
     // TODO: implement this
     
     return new int[]{0, 0, 0, 0}; // upper left x, y;  lower right x, y.
