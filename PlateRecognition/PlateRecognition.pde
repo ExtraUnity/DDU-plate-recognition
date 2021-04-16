@@ -446,10 +446,8 @@ Picture plateLocalisation(PImage orgImg, double minArea, double percentBlack, do
   blurImg.filter(BLUR, 1.4);
   blurImg.filter(THRESHOLD, 0.7);
   if(textColor.equals("black")) blurImg.filter(INVERT);       
-
   ArrayList<Picture> components = Segmentation.connectedComponentAnalysis(blurImg, this);
   ArrayList<Picture> removes = new ArrayList<Picture>();
-  println(components.size());
   for (int i = 0; i<components.size(); i++) {
     Picture p = components.get(i);
     if (componentTooSmall(p, blurImg, minArea) || foregroundAreaTooSmall(p, percentBlack) || aspectIntervalWrong(p, aspectLow, aspectHigh)) {
@@ -457,7 +455,7 @@ Picture plateLocalisation(PImage orgImg, double minArea, double percentBlack, do
     }
   }
   components.removeAll(removes);
-  println(components.size());
+
   int i = 0;
   Picture plate = components.get(i);
   PImage orgPlate = orgImg.get(components.get(i).boundingBox[0], components.get(i).boundingBox[1], components.get(i).width, components.get(i).height);
