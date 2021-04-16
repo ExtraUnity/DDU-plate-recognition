@@ -52,6 +52,7 @@ class AnalysisResult {
       image(this.segmented.get(i), i*spacing, this.originalImage.height+40);
       fill(255);
       textSize(36);
+      textAlign(CORNER);
       text(this.foundName.charAt(i), i*spacing, this.originalImage.height+35);
     }
 
