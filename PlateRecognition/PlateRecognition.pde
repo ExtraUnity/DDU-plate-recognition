@@ -212,6 +212,16 @@ String getCharForNumber(int i) {
   return i > 0 && i < 27 ? String.valueOf((char)(i + 64)) : null;
 }
 
+String[] listFileNames(String dir) { //from https://processing.org/examples/directorylist.html
+  File file = new File(dir);
+  if (file.isDirectory()) {
+    String names[] = file.list();
+    return names;
+  } else {
+    // If it's not a directory
+    return null;
+  }
+}
 
 DataSet createTrainingSet(int lower, int upper, int inputSize, int outputSize, String imageFile, String labelFile) throws IOException {
   DataSet set = new DataSet(inputSize, outputSize); //input size output size
