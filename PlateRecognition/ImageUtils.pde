@@ -16,18 +16,18 @@ static class ImageUtils {
     PImage newImg = img.get();
     int imgWidth = img.width;
     int imgHeight = img.height;
-    float random = main.random(0.1, 0.2);
-    newImg.resize(ceil(random*imgWidth), ceil(random*imgHeight));
-    newImg.resize(imgWidth, imgHeight);
+    float random = main.random(0.1, 0.2); 
+    newImg.resize(ceil(random*imgWidth), ceil(random*imgHeight)); //lowers to random amount between 10% and 20%
+    newImg.resize(imgWidth, imgHeight); //return the same image but lower resolution
     return newImg;
   }
 
-  static PImage randomDots(PImage img) {
+  static PImage randomDots(PImage img, int maxAmount) {
     PImage newImg = img.get();
-    int random = (int)main.random(0, 200);
+    int random = (int)main.random(0, maxAmount); //random amount of dots
     for (int i = 0; i<random; i++) {
 
-      newImg.pixels[(int)main.random(0, newImg.pixels.length)] = main.alphaToPixel((main.random(0, 1)>0.7 ? 255 : 0));
+      newImg.pixels[(int)main.random(0, newImg.pixels.length)] = main.alphaToPixel((main.random(0, 1)>0.7 ? 255 : 0)); //70% black dots
     }
 
     return newImg;

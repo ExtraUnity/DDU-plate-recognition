@@ -34,7 +34,7 @@ void setup() {
 
     letterNet = NeuralNetwork.loadNetwork(path + "\\networks\\letterNet.txt");
     numberNet = NeuralNetwork.loadNetwork(path + "\\networks\\numberNet.txt");
-    
+
     //letterNet = new NeuralNetwork(784, 600, 400, 300, 300, 100, 27);
     //numberNet = new NeuralNetwork(784, 300, 100, 10);
 
@@ -50,9 +50,7 @@ void setup() {
 
 
     background(255);
-    button = new Button(800,250,100,30, "Select a file");
-    
-
+    button = new Button(800, 250, 100, 30, "Select a file");
   }
   catch(Exception e) {
     println(e);
@@ -72,7 +70,7 @@ void draw() {
 }
 
 void mousePressed() {
-  if(button.pressed()) selectFile();
+  if (button.pressed()) selectFile();
 }
 
 void exportPicture(PImage plate, String fileName) {
@@ -108,16 +106,16 @@ AnalysisResult analyseImage(File selection) {
   String foundName = null;
   String format = "AA00000";
   String textColor = "black";
-  
+
   try {
-    
+
     String[] config = loadStrings("../config.ini");
-    for(String s : config) {
-     if(s.startsWith("format")) {
-       format = s.split("=")[1];
-     } else if(s.startsWith("textcolor")) {
-       textColor = s.split("=")[1]; 
-     }
+    for (String s : config) {
+      if (s.startsWith("format")) {
+        format = s.split("=")[1];
+      } else if (s.startsWith("textcolor")) {
+        textColor = s.split("=")[1];
+      }
     }
     time = System.nanoTime();
     plate = plateLocalisation(mainPicture, textColor);
@@ -142,6 +140,31 @@ void fileSelected(File selection) {
   }
 }
 
+ArrayList<PImage> createTrainingImages(String path, int amount, int maxDots) {
+  ArrayList<PImage> orgImgs = new ArrayList<PImage>();
+  String[] orgImgNames = listFileNames(path);
+  ArrayList<PImage> distortedImgs = new ArrayList<PImage>();
+  for (String s : orgImgNames) {
+    PImage img = loadImage(s);
+    img.filter(GRAY);
+    img.filter(THRESHOLD, 0.5);
+    img.filter(INVERT);
+    orgImgs.add(img);
+  }
+  distortedImgs = new ArrayList<PImage>();
+  for(int i = 0; i<amount; i++) {
+  PImage orgImg = orgImgs.get((int)random(0,orgImgs.size()));
+  PImage newImg = ImageUtils.lowerResolution(orgImg);
+  newImg = ImageUtils.stretchRandom(newImg);
+  newImg.filter(THRESHOLD, 0.05);
+  newImg = ImageUtils.cropBorders(newImg);
+  newImg = ImageUtils.fitInto(newImg, 20, 20, 0);
+  newImg = ImageUtils.centerWithMassInto(newImg, 28, 28, 0);
+  newImg = ImageUtils.randomDots(newImg, maxDots);
+  distortedImgs.add(newImg);
+  }
+  return distortedImgs;
+}
 
 double[] useNeuralNetwork(String path, NeuralNetwork network) {
   PImage img = loadImage(path);
@@ -372,8 +395,8 @@ String recognizeImages(ArrayList <PImage> images, NeuralNetwork numberNet, Neura
   // Assume the format is two lettes at the start, and numbers everywhere else
   String outputs = ""; 
   for (int i = 0; i<images.size(); i++) {
-    if(isAlphabetical(str((format.charAt(i))))) {
-     outputs += getCharForNumber((int)useNeuralNetwork(images.get(i), letterNet)[0] );
+    if (isAlphabetical(str((format.charAt(i))))) {
+      outputs += getCharForNumber((int)useNeuralNetwork(images.get(i), letterNet)[0] );
     } else {
       outputs += str((int)useNeuralNetwork(images.get(i), numberNet)[0]);
     }
@@ -455,7 +478,7 @@ Picture plateLocalisation(PImage orgImg, double minArea, double percentBlack, do
   blurImg.filter(GRAY);
   blurImg.filter(BLUR, 1.4);
   blurImg.filter(THRESHOLD, 0.7);
-  if(textColor.equals("black")) blurImg.filter(INVERT);       
+  if (textColor.equals("black")) blurImg.filter(INVERT);       
   ArrayList<Picture> components = Segmentation.connectedComponentAnalysis(blurImg, this);
   ArrayList<Picture> removes = new ArrayList<Picture>();
   for (int i = 0; i<components.size(); i++) {
@@ -470,8 +493,8 @@ Picture plateLocalisation(PImage orgImg, double minArea, double percentBlack, do
   Picture plate = components.get(i);
   PImage orgPlate = orgImg.get(components.get(i).boundingBox[0], components.get(i).boundingBox[1], components.get(i).width, components.get(i).height);
   plate.img = orgPlate;
-  plate.boundingBox = new int[]{plate.boundingBox[0],plate.boundingBox[1]+orgImgHeight/3,plate.boundingBox[2],plate.boundingBox[3]+orgImgHeight/3};
-  
+  plate.boundingBox = new int[]{plate.boundingBox[0], plate.boundingBox[1]+orgImgHeight/3, plate.boundingBox[2], plate.boundingBox[3]+orgImgHeight/3};
+
   return plate;
 }
 

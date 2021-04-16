@@ -277,7 +277,7 @@ static class Segmentation {  //<>//
 
 
     // rule 4, Blobs at the corners of the image
-    int[] massCenter = ImageUtils.computeCenterOfMass(blob.img, outer);
+    int[] massCenter = ImageUtils.computeCenterOfMass(blob.img);
 
     if (massCenter[0] < 0.015*originalPlate.width && massCenter[1] < 0.015 *originalPlate.height) return false;
     if (massCenter[0] < 0.015*originalPlate.width && massCenter[1] > 0.985 *originalPlate.height) return false;
