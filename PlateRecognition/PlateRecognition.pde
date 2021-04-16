@@ -70,7 +70,7 @@ void setup() {
     test.filter(GRAY);
     PImage p = ImageUtils.cannyEdgeDetector(test, this);
     image(p, 0, 0);
-    int[] coors = ImageUtils.plateLocation(p, this);
+    int[] coors = ImageUtils.plateLocalization(p, this);
 
     rectMode(CORNERS);
     noFill();
