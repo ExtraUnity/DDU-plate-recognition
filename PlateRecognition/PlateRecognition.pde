@@ -1,4 +1,4 @@
-import java.io.*; //<>// //<>// //<>//
+import java.io.*;  //<>//
 import java.util.LinkedList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -156,7 +156,7 @@ double[] useNeuralNetwork(PImage _img, NeuralNetwork network) {
    */
   img.filter(INVERT);
 
-  img.resize(width, height);
+  img.resize(0, height);
 
   /*
   Preprocess image to look like the ones from EMNIST database
