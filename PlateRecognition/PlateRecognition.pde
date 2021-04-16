@@ -188,9 +188,9 @@ double[] useNeuralNetwork(PImage _img, NeuralNetwork network) {
   //img.pixels = flipArray(img.pixels, (int) sqrt(img.pixels.length), (int) sqrt(img.pixels.length));
   //img.pixels = pix;
 
-  img = ImageUtils.cropBorders(img, this); 
-  img = ImageUtils.fitInto(img, 20, 20, color(0), this);
-  img = ImageUtils.centerWithMassInto(img, 28, 28, color(0), this);
+  img = ImageUtils.cropBorders(img); 
+  img = ImageUtils.fitInto(img, 20, 20, color(0));
+  img = ImageUtils.centerWithMassInto(img, 28, 28, color(0));
 
   //image(img, 0, 0);
 

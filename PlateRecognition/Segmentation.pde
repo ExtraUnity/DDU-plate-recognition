@@ -87,9 +87,9 @@ static class Segmentation {  //<>//
     //println(ImageUtils.averageBrightness(plate, outer), ImageUtils.medianBrightness(plate, outer), (ImageUtils.averageBrightness(plate, outer)+ ImageUtils.medianBrightness(plate, outer))/2.0);
     //plate.filter(THRESHOLD, ); // find the average intensity to filter dynamicly insted of taking a static value
     //outer.image(plate, 0, 0);
-    plate.filter(THRESHOLD, (ImageUtils.averageBrightness(plate, outer)+ ImageUtils.medianBrightness(plate, outer))/2.0);
+    plate.filter(THRESHOLD, (ImageUtils.averageBrightness(plate)+ ImageUtils.medianBrightness(plate))/2.0);
     //outer.image(plate, 0, 250);
-    plate = ImageUtils.cropBorders(plate, outer);
+    plate = ImageUtils.cropBorders(plate);
 
 
     return plate;
