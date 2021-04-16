@@ -1,14 +1,18 @@
-import java.io.*;  //<>//
+import java.io.*; //<>// //<>// //<>//
 import java.util.LinkedList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Random;
 import java.util.Arrays;
+import java.lang.Object;
+import java.util.*;
+import java.lang.*;
+
 DataSet trainingLettersSet;
 DataSet testingLettersSet;
 DataSet trainingDigitsSet;
 DataSet testingDigitsSet;
-
+Button button;
 ArrayList<AnalysisResult> results = new ArrayList<AnalysisResult>();
 static PApplet p = new PApplet();
 
@@ -18,7 +22,7 @@ double[] drawNum;
 int debugCounter = 0; 
 
 void setup() {
-  size(700, 700);
+  size(900, 700);
   NeuralNetwork numberNet;
   NeuralNetwork letterNet;
 
@@ -30,7 +34,7 @@ void setup() {
 
     letterNet = NeuralNetwork.loadNetwork(path + "\\networks\\letterNet.txt");
     numberNet = NeuralNetwork.loadNetwork(path + "\\networks\\numberNet.txt");
-
+    
     //letterNet = new NeuralNetwork(784, 600, 400, 300, 300, 100, 27);
     //numberNet = new NeuralNetwork(784, 300, 100, 10);
 
@@ -38,47 +42,15 @@ void setup() {
     //testingLettersSet = createTestingSet(0, 14800, 784, 1, "emnist-letters-test-images.idx3-ubyte", "emnist-letters-test-labels.idx3-ubyte");
     //trainData(50, 50, 1200, "letterNet", 5, trainingLettersSet, testingLettersSet, letterNet);
     //testData(letterNet, testingLettersSet);
-    
+
     //trainingDigitsSet = createTrainingSet(0, 60000, 784, 10, "emnist-digits-train-images.idx3-ubyte", "emnist-digits-train-labels.idx3-ubyte");
     //testingDigitsSet = createTestingSet(0, 40000, 784, 1, "emnist-digits-test-images.idx3-ubyte", "emnist-digits-test-labels.idx3-ubyte");
     //trainData(50, 50, 1200, "numberNet", 5, trainingDigitsSet, testingDigitsSet, numberNet);
     //testData(numberNet, testingDigitsSet);
 
-/*
-    PImage test = loadImage(path+"\\plates\\CU.jpg");
-
-    ArrayList <PImage> images = Segmentation.blobSegmentation(test, this, numberNet, letterNet, this);
-
-    String readPlate = recognizeImages(images, numberNet, letterNet);
-    println(readPlate);
-
-    background(120);
-    for (int i = 0; i < images.size(); i++) {
-      image(images.get(i), i*80, 150);
-      fill(255);
-      textSize(36);
-      text(readPlate.charAt(i), i*80, 145);
-    }
-
-    // selectFile();
-*/
-    //PImage test = loadImage(path+"\\plates\\AB.png");
     background(255);
-    PImage test;
-    test = loadImage(path+"\\plates\\CW450777.jpg");
-    test.resize(700, 0);
-    test.filter(GRAY);
-    PImage p = ImageUtils.cannyEdgeDetector(test, this);
-    image(p, 0, 0);
-    int[] coors = ImageUtils.plateLocalization(p, this);
+    button = new Button(800,250,100,30, "Select a file");
 
-    rectMode(CORNERS);
-    noFill();
-    rect(coors[0], coors[1], coors[2], coors[3]);
-    rectMode(CORNER);
-    
-    
-    //exportPicture(test, readPlate);
   }
   catch(Exception e) {
     println(e);
@@ -86,6 +58,7 @@ void setup() {
 }
 
 void draw() {
+  button.render();
   try {
     println(results.get(0).toString());
     results.get(0).renderPictures();
@@ -94,6 +67,10 @@ void draw() {
   catch(Exception e) {
     //println(e);
   }
+}
+
+void mousePressed() {
+  if(button.pressed()) selectFile();
 }
 
 void exportPicture(PImage plate, String fileName) {
@@ -124,25 +101,40 @@ AnalysisResult analyseImage(File selection) {
     println(classErr);
   }
   long time = 0; 
+  Picture plate = null;
   ArrayList <PImage> segmentedPictures = null;
   String foundName = null;
-
+  String format = "AA00000";
+  String textColor = "black";
+  
   try {
+    
+    String[] config = loadStrings("../config.ini");
+    for(String s : config) {
+     if(s.startsWith("format")) {
+       format = s.split("=")[1];
+     } else if(s.startsWith("textcolor")) {
+       textColor = s.split("=")[1]; 
+     }
+    }
     time = System.nanoTime();
-    segmentedPictures = Segmentation.blobSegmentation(mainPicture, this, numberNet, letterNet, this);
-    foundName = recognizeImages(segmentedPictures, numberNet, letterNet);
+    plate = plateLocalisation(mainPicture, textColor);
+    segmentedPictures = Segmentation.blobSegmentation(plate.img, this, numberNet, letterNet, this);
+    foundName = recognizeImages(segmentedPictures, numberNet, letterNet, format);
     time = System.nanoTime() - time;
   } 
   catch(Exception e) {
     println(e);
   }
 
-  return new AnalysisResult(expectedName, foundName, time, mainPicture, segmentedPictures);
+  return new AnalysisResult(expectedName, foundName, time, mainPicture, plate, segmentedPictures);
 }
 
 void fileSelected(File selection) {
   if (selection == null) {
     println("Window was closed or the user hit cancel");
+  } else if (!selection.getName().endsWith("jpg") && !selection.getName().endsWith("png")) {
+    println("Wrong file format: Only .jpg and .png are supported");
   } else {
     results.add(analyseImage(selection));
   }
@@ -364,19 +356,16 @@ int getIndexOfSmallest(double[] a) {
   return indexMin;
 }
 
-
-
-String recognizeImages(ArrayList <PImage> images, NeuralNetwork numberNet, NeuralNetwork letterNet) {
-  // Asume the format is AA 99 999
+String recognizeImages(ArrayList <PImage> images, NeuralNetwork numberNet, NeuralNetwork letterNet, String format) {
+  // Assume the format is two lettes at the start, and numbers everywhere else
   String outputs = ""; 
-
   for (int i = 0; i<images.size(); i++) {
-    if (i <2) {
-      outputs += getCharForNumber((int)useNeuralNetwork(images.get(i), letterNet)[0] );
+    if(isAlphabetical(str((format.charAt(i))))) {
+     outputs += getCharForNumber((int)useNeuralNetwork(images.get(i), letterNet)[0] );
     } else {
       outputs += str((int)useNeuralNetwork(images.get(i), numberNet)[0]);
     }
-  }
+  }  
   return outputs;
 }
 
@@ -439,4 +428,55 @@ static boolean containsValue(int[] a, int n) {
     if (i==n) return true;
   }
   return false;
+}
+
+Picture plateLocalisation(PImage orgImg, String textColor) {
+  return plateLocalisation(orgImg, 0.005, 0.4, 3, 5, textColor);
+}
+
+Picture plateLocalisation(PImage orgImg, double minArea, double percentBlack, double aspectLow, double aspectHigh, String textColor) {
+  orgImg.resize(700, 0);
+  int orgImgHeight = orgImg.height;
+  orgImg = orgImg.get(0, orgImg.height/3, orgImg.width, 2*orgImg.height/3);
+  PImage blurImg = orgImg.get();
+
+  blurImg.filter(GRAY);
+  blurImg.filter(BLUR, 1.4);
+  blurImg.filter(THRESHOLD, 0.7);
+  if(textColor.equals("black")) blurImg.filter(INVERT);       
+
+  ArrayList<Picture> components = Segmentation.connectedComponentAnalysis(blurImg, this);
+  ArrayList<Picture> removes = new ArrayList<Picture>();
+  println(components.size());
+  for (int i = 0; i<components.size(); i++) {
+    Picture p = components.get(i);
+    if (componentTooSmall(p, blurImg, minArea) || foregroundAreaTooSmall(p, percentBlack) || aspectIntervalWrong(p, aspectLow, aspectHigh)) {
+      removes.add(p);
+    }
+  }
+  components.removeAll(removes);
+  println(components.size());
+  int i = 0;
+  Picture plate = components.get(i);
+  PImage orgPlate = orgImg.get(components.get(i).boundingBox[0], components.get(i).boundingBox[1], components.get(i).width, components.get(i).height);
+  plate.img = orgPlate;
+  plate.boundingBox = new int[]{plate.boundingBox[0],plate.boundingBox[1]+orgImgHeight/3,plate.boundingBox[2],plate.boundingBox[3]+orgImgHeight/3};
+  
+  return plate;
+}
+
+boolean componentTooSmall(Picture p, PImage img, double minArea) {
+  return p.width*p.height < minArea*img.width*img.height;
+}
+
+boolean foregroundAreaTooSmall(Picture p, double percentBlack) {
+  return Segmentation.countBlackPix(p.img, this)/ (double)p.img.pixels.length < percentBlack;
+}
+
+boolean aspectIntervalWrong(Picture p, double lower, double upper) {
+  return p.img.width/ (double)p.img.height > upper || p.img.width/ (double)p.img.height < lower;
+}
+
+boolean isAlphabetical(String c) {
+  return c.matches("[a-zA-Z]+"); //taken from https://stackoverflow.com/questions/5238491/check-if-string-contains-only-letters/29836318
 }
