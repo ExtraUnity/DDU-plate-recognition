@@ -1,4 +1,4 @@
-static class Segmentation {  //<>//
+static class Segmentation {  //<>// //<>//
   static ArrayList <PImage> plateSegmentation(PImage plate, PApplet outer) {
     // based on Koo et al, 2009
 
@@ -280,9 +280,6 @@ static class Segmentation {  //<>//
 
     return true;
   }
-
-
-
 
   static int countBlackPix(PImage img, PApplet outer) {
     int sum = 0; 
