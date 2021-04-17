@@ -25,20 +25,34 @@ void setup() {
   size(900, 700);
   NeuralNetwork numberNet;
   NeuralNetwork letterNet;
+  ImageUtils.main = this;
+  String path = dataPath("");
+
 
   //background(0);
-  String path = dataPath("");
-  ImageUtils.main = this;
-  try {
 
+
+  try {
+    button = new Button(800, 250, 100, 30, "Select a file");
     letterNet = NeuralNetwork.loadNetwork(path + "\\networks\\letterNet.txt");
     numberNet = NeuralNetwork.loadNetwork(path + "\\networks\\numberNet.txt");
 
     //letterNet = new NeuralNetwork(784, 600, 400, 300, 300, 100, 27);
     //numberNet = new NeuralNetwork(784, 300, 100, 10);
 
+    long time = System.nanoTime();
+    println(">>>Creating training set<<<");
+    trainingLettersSet = createSet(path + "\\trainingImages\\letters", 60000, 784, 27, 200); 
     //trainingLettersSet = createTrainingSet(0, 60000, 784, 27, "emnist-letters-train-images.idx3-ubyte", "emnist-letters-train-labels.idx3-ubyte"); //60000 is the number of letters. change this maybe
+    println(">>>Training set created<<<");
+    println(">>>Creating testing set<<<");
+    testingLettersSet = createSet(path + "\\trainingImages\\letters", 20000, 784, 1, 200);
     //testingLettersSet = createTestingSet(0, 14800, 784, 1, "emnist-letters-test-images.idx3-ubyte", "emnist-letters-test-labels.idx3-ubyte");
+    println(">>>Testing set created<<<");
+    println((System.nanoTime()-time)/1000000);
+
+
+
     //trainData(50, 50, 1200, "letterNet", 5, trainingLettersSet, testingLettersSet, letterNet);
     //testData(letterNet, testingLettersSet);
 
@@ -49,7 +63,6 @@ void setup() {
 
 
     background(255);
-    button = new Button(800, 250, 100, 30, "Select a file");
   }
   catch(Exception e) {
     println(e);
@@ -143,26 +156,32 @@ DataSet createSet(String path, int amount, int inputLength, int outputLength, in
   DataSet set = new DataSet(inputLength, outputLength); //input size output size
   ArrayList<PImage> orgImgs = new ArrayList<PImage>();
   String[] orgImgNames = listFileNames(path);
+
   for (String s : orgImgNames) { //preproccess the original images
-    PImage img = loadImage(s);
+    PImage img = loadImage(path + "\\" + s);
     img.filter(GRAY);
     img.filter(THRESHOLD, 0.5);
     img.filter(INVERT);
+    img.resize(0, 100);
     orgImgs.add(img);
   }
-  
+  long time = System.nanoTime();
   for (int i = 0; i<amount; i++) { //create the distorted images for training
     int index = (int)random(0, orgImgs.size());
     PImage orgImg = orgImgs.get(index);
+    PImage distortedImg = distortImage(orgImg, maxDots);
+
     char orgImgName = orgImgNames[index].charAt(0);
     int target = getNumberForChar(orgImgName);
     double[] output = createLabels(target, outputLength);
     double[] input = new double[inputLength];
-    PImage distortedImg = distortImage(orgImg, maxDots);
+
     for (int j = 0; j<distortedImg.pixels.length; j++) {
       input[j] = ((double)red(distortedImg.pixels[j])) / ((double)255);
     }
-    set.addData(input,output);
+
+    set.addData(input, output);
+    if (i%(amount/10)==0) println(i/(amount/100) + "% created, " + "time:" + (System.nanoTime()-time)/1000000 + "ms");
   }
 
   return set;
