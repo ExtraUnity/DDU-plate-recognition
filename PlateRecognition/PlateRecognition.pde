@@ -154,18 +154,22 @@ ArrayList<PImage> createTrainingImages(String path, int amount, int maxDots) {
   distortedImgs = new ArrayList<PImage>();
   for(int i = 0; i<amount; i++) {
   PImage orgImg = orgImgs.get((int)random(0,orgImgs.size()));
-  PImage newImg = ImageUtils.lowerResolution(orgImg);
-  newImg = ImageUtils.stretchRandom(newImg);
-  newImg.filter(THRESHOLD, 0.05);
-  newImg = ImageUtils.cropBorders(newImg);
-  newImg = ImageUtils.fitInto(newImg, 20, 20, 0);
-  newImg = ImageUtils.centerWithMassInto(newImg, 28, 28, 0);
-  newImg = ImageUtils.randomDots(newImg, maxDots);
-  distortedImgs.add(newImg);
+   distortedImgs.add(distortImage(orgImg, maxDots));
   }
   return distortedImgs;
 }
 
+PImage distortImage(PImage orgImg, int maxDots) {
+  PImage newImg = ImageUtils.lowerResolution(orgImg);
+  newImg = ImageUtils.stretchRandom(newImg);
+  newImg.filter(THRESHOLD, 0.05); //resolution changes the color of some pixels
+  newImg = ImageUtils.cropBorders(newImg);
+  newImg = ImageUtils.fitInto(newImg, 20, 20, 0);
+  newImg = ImageUtils.centerWithMassInto(newImg, 28, 28, 0);
+  newImg = ImageUtils.randomDots(newImg, maxDots);
+  return newImg;
+ 
+}
 double[] useNeuralNetwork(String path, NeuralNetwork network) {
   PImage img = loadImage(path);
   return useNeuralNetwork(img, network);
