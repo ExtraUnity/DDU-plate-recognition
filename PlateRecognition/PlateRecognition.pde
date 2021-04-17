@@ -34,26 +34,27 @@ void setup() {
 
   try {
     button = new Button(800, 250, 100, 30, "Select a file");
-    letterNet = NeuralNetwork.loadNetwork(path + "\\networks\\letterNet.txt");
-    numberNet = NeuralNetwork.loadNetwork(path + "\\networks\\numberNet.txt");
+    letterNet = NeuralNetwork.loadNetwork(path + "\\networks\\letterNet2.txt");
+    numberNet = NeuralNetwork.loadNetwork(path + "\\networks\\numberNet2.txt");
 
     //letterNet = new NeuralNetwork(784, 600, 400, 300, 300, 100, 27);
     //numberNet = new NeuralNetwork(784, 300, 100, 10);
 
-    long time = System.nanoTime();
-    println(">>>Creating training set<<<");
-    trainingLettersSet = createSet(path + "\\trainingImages\\letters", 60000, 784, 27, 200); 
-    //trainingLettersSet = createTrainingSet(0, 60000, 784, 27, "emnist-letters-train-images.idx3-ubyte", "emnist-letters-train-labels.idx3-ubyte"); //60000 is the number of letters. change this maybe
-    println(">>>Training set created<<<");
-    println(">>>Creating testing set<<<");
-    testingLettersSet = createSet(path + "\\trainingImages\\letters", 20000, 784, 1, 200);
-    //testingLettersSet = createTestingSet(0, 14800, 784, 1, "emnist-letters-test-images.idx3-ubyte", "emnist-letters-test-labels.idx3-ubyte");
-    println(">>>Testing set created<<<");
-    println((System.nanoTime()-time)/1000000);
+    //long time = System.nanoTime();
+    //println(">>>Creating training sets<<<");
+    //trainingDigitsSet = createSet(path + "\\trainingImages\\numbers", 100000, 784, 10, 200); 
+    //trainingLettersSet = createSet(path + "\\trainingImages\\letters", 100000, 784, 27, 200); 
+    //println(">>>Training sets created<<<");
+    //println(">>>Creating testing sets<<<");
+    //testingDigitsSet = createSet(path + "\\trainingImages\\numbers", 50000, 784, 1, 500);
+    //testingLettersSet = createSet(path + "\\trainingImages\\letters", 50000, 784, 1, 200);
+    //println(">>>Testing set created<<<");
+    //println(">>>Final time: " + (System.nanoTime()-time)/1000000 + "ms<<<");
 
 
-
-    //trainData(50, 50, 1200, "letterNet", 5, trainingLettersSet, testingLettersSet, letterNet);
+    //trainData(50, 50, 1200, "numberNet2", 5, trainingDigitsSet, testingDigitsSet, numberNet);
+    //testData(numberNet, testingDigitsSet);
+    //trainData(50, 50, 1200, "letterNet2", 5, trainingLettersSet, testingLettersSet, letterNet);
     //testData(letterNet, testingLettersSet);
 
     //trainingDigitsSet = createTrainingSet(0, 60000, 784, 10, "emnist-digits-train-images.idx3-ubyte", "emnist-digits-train-labels.idx3-ubyte");
@@ -103,8 +104,8 @@ AnalysisResult analyseImage(File selection) {
   NeuralNetwork letterNet = null; 
   NeuralNetwork numberNet = null; 
   try {
-    letterNet = NeuralNetwork.loadNetwork(path + "\\networks\\letterNet.txt");
-    numberNet = NeuralNetwork.loadNetwork(path + "\\networks\\numberNet.txt");
+    letterNet = NeuralNetwork.loadNetwork(path + "\\networks\\letterNet2.txt");
+    numberNet = NeuralNetwork.loadNetwork(path + "\\networks\\numberNet2.txt");
   } 
   catch (IOException IOErr) {
     println(IOErr);
@@ -172,15 +173,21 @@ DataSet createSet(String path, int amount, int inputLength, int outputLength, in
     PImage distortedImg = distortImage(orgImg, maxDots);
 
     char orgImgName = orgImgNames[index].charAt(0);
-    int target = getNumberForChar(orgImgName);
-    double[] output = createLabels(target, outputLength);
+    int target;
+    if(isAlphabetical(str(orgImgName))) target = getNumberForChar(orgImgName);
+    else target = Integer.parseInt(str(orgImgName));
+    
+    double[] output = new double[outputLength];
+    if(outputLength == 1) output[0] = target;
+    else output = createLabels(target,outputLength);
     double[] input = new double[inputLength];
 
     for (int j = 0; j<distortedImg.pixels.length; j++) {
       input[j] = ((double)red(distortedImg.pixels[j])) / ((double)255);
     }
-
+    
     set.addData(input, output);
+    
     if (i%(amount/10)==0) println(i/(amount/100) + "% created, " + "time:" + (System.nanoTime()-time)/1000000 + "ms");
   }
 
@@ -190,10 +197,10 @@ DataSet createSet(String path, int amount, int inputLength, int outputLength, in
 PImage distortImage(PImage orgImg, int maxDots) {
   PImage newImg = ImageUtils.lowerResolution(orgImg);
   newImg = ImageUtils.stretchRandom(newImg);
-  newImg.filter(THRESHOLD, 0.05); //resolution changes the color of some pixels
+  newImg.filter(THRESHOLD, random(0.05,0.5)); //resolution changes the color of some pixels
   newImg = ImageUtils.cropBorders(newImg);
-  newImg = ImageUtils.fitInto(newImg, 20, 20, 0);
-  newImg = ImageUtils.centerWithMassInto(newImg, 28, 28, 0);
+  newImg = ImageUtils.fitInto(newImg, 20, 20, color(0));
+  newImg = ImageUtils.centerWithMassInto(newImg, 28, 28, color(0));
   newImg = ImageUtils.randomDots(newImg, maxDots);
   return newImg;
 }
@@ -342,6 +349,7 @@ void trainData(int epochs, int loops, int batch_size, String file, int stopThres
   int wrongTurns = 0;
   for (int e = 0; e < epochs; e++) {
     net.train(trainingSet, loops, batch_size);
+
     System.out.println("Epoch:  " + (e+1) + "  Out of:  " + epochs);
     float test = testData(net, testingSet);
     String path = dataPath("");
@@ -367,7 +375,6 @@ float testData(NeuralNetwork net, DataSet testingSet) {
   int wrong = 0;
   for (int i = 0; i<testingSet.data.size(); i++) {
     double[] result = net.feedForward(testingSet.getInput(i), 0);
-
     if (getIndexOfLargest(result)==testingSet.getOutput(i)[0]) {
       correct++;
     } else {
@@ -500,7 +507,7 @@ static boolean containsValue(int[] a, int n) {
 }
 
 Picture plateLocalisation(PImage orgImg, String textColor) {
-  return plateLocalisation(orgImg, 0.005, 0.4, 3, 5, textColor);
+  return plateLocalisation(orgImg, 0.005, 0.3, 3, 5, textColor);
 }
 
 Picture plateLocalisation(PImage orgImg, double minArea, double percentBlack, double aspectLow, double aspectHigh, String textColor) {
@@ -522,7 +529,7 @@ Picture plateLocalisation(PImage orgImg, double minArea, double percentBlack, do
     }
   }
   components.removeAll(removes);
-
+  println(components.size());
   int i = 0;
   Picture plate = components.get(i);
   PImage orgPlate = orgImg.get(components.get(i).boundingBox[0], components.get(i).boundingBox[1], components.get(i).width, components.get(i).height);
