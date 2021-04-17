@@ -34,8 +34,8 @@ void setup() {
 
   try {
     button = new Button(800, 250, 100, 30, "Select a file");
-    letterNet = NeuralNetwork.loadNetwork(path + "\\networks\\letterNet2.txt");
-    numberNet = NeuralNetwork.loadNetwork(path + "\\networks\\numberNet2.txt");
+    letterNet = NeuralNetwork.loadNetwork(path + "\\networks\\letterNet.txt");
+    numberNet = NeuralNetwork.loadNetwork(path + "\\networks\\numberNet.txt");
 
     //letterNet = new NeuralNetwork(784, 600, 400, 300, 300, 100, 27);
     //numberNet = new NeuralNetwork(784, 300, 100, 10);
@@ -52,15 +52,10 @@ void setup() {
     //println(">>>Final time: " + (System.nanoTime()-time)/1000000 + "ms<<<");
 
 
-    //trainData(50, 50, 1200, "numberNet2", 5, trainingDigitsSet, testingDigitsSet, numberNet);
-    //testData(numberNet, testingDigitsSet);
-    //trainData(50, 50, 1200, "letterNet2", 5, trainingLettersSet, testingLettersSet, letterNet);
-    //testData(letterNet, testingLettersSet);
-
-    //trainingDigitsSet = createTrainingSet(0, 60000, 784, 10, "emnist-digits-train-images.idx3-ubyte", "emnist-digits-train-labels.idx3-ubyte");
-    //testingDigitsSet = createTestingSet(0, 40000, 784, 1, "emnist-digits-test-images.idx3-ubyte", "emnist-digits-test-labels.idx3-ubyte");
     //trainData(50, 50, 1200, "numberNet", 5, trainingDigitsSet, testingDigitsSet, numberNet);
     //testData(numberNet, testingDigitsSet);
+    //trainData(50, 50, 1200, "letterNet", 5, trainingLettersSet, testingLettersSet, letterNet);
+    //testData(letterNet, testingLettersSet);
 
 
     background(255);
@@ -104,8 +99,8 @@ AnalysisResult analyseImage(File selection) {
   NeuralNetwork letterNet = null; 
   NeuralNetwork numberNet = null; 
   try {
-    letterNet = NeuralNetwork.loadNetwork(path + "\\networks\\letterNet2.txt");
-    numberNet = NeuralNetwork.loadNetwork(path + "\\networks\\numberNet2.txt");
+    letterNet = NeuralNetwork.loadNetwork(path + "\\networks\\letterNet.txt");
+    numberNet = NeuralNetwork.loadNetwork(path + "\\networks\\numberNet.txt");
   } 
   catch (IOException IOErr) {
     println(IOErr);
