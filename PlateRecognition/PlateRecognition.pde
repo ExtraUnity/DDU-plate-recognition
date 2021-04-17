@@ -26,7 +26,6 @@ void setup() {
   NeuralNetwork numberNet;
   NeuralNetwork letterNet;
 
-
   //background(0);
   String path = dataPath("");
   ImageUtils.main = this;
@@ -140,23 +139,33 @@ void fileSelected(File selection) {
   }
 }
 
-ArrayList<PImage> createTrainingImages(String path, int amount, int maxDots) {
+DataSet createSet(String path, int amount, int inputLength, int outputLength, int maxDots) {
+  DataSet set = new DataSet(inputLength, outputLength); //input size output size
   ArrayList<PImage> orgImgs = new ArrayList<PImage>();
   String[] orgImgNames = listFileNames(path);
-  ArrayList<PImage> distortedImgs = new ArrayList<PImage>();
-  for (String s : orgImgNames) {
+  for (String s : orgImgNames) { //preproccess the original images
     PImage img = loadImage(s);
     img.filter(GRAY);
     img.filter(THRESHOLD, 0.5);
     img.filter(INVERT);
     orgImgs.add(img);
   }
-  distortedImgs = new ArrayList<PImage>();
-  for(int i = 0; i<amount; i++) {
-  PImage orgImg = orgImgs.get((int)random(0,orgImgs.size()));
-   distortedImgs.add(distortImage(orgImg, maxDots));
+  
+  for (int i = 0; i<amount; i++) { //create the distorted images for training
+    int index = (int)random(0, orgImgs.size());
+    PImage orgImg = orgImgs.get(index);
+    char orgImgName = orgImgNames[index].charAt(0);
+    int target = getNumberForChar(orgImgName);
+    double[] output = createLabels(target, outputLength);
+    double[] input = new double[inputLength];
+    PImage distortedImg = distortImage(orgImg, maxDots);
+    for (int j = 0; j<distortedImg.pixels.length; j++) {
+      input[j] = ((double)red(distortedImg.pixels[j])) / ((double)255);
+    }
+    set.addData(input,output);
   }
-  return distortedImgs;
+
+  return set;
 }
 
 PImage distortImage(PImage orgImg, int maxDots) {
@@ -168,7 +177,6 @@ PImage distortImage(PImage orgImg, int maxDots) {
   newImg = ImageUtils.centerWithMassInto(newImg, 28, 28, 0);
   newImg = ImageUtils.randomDots(newImg, maxDots);
   return newImg;
- 
 }
 double[] useNeuralNetwork(String path, NeuralNetwork network) {
   PImage img = loadImage(path);
@@ -230,13 +238,16 @@ double[] useNeuralNetwork(PImage _img, NeuralNetwork network) {
 
   //pixelList = flipArray(pixelList, (int) sqrt(pixelList.length), (int) sqrt(pixelList.length));
   double[] guess = network.feedForward(pixelList, 0);
-
   return new double[] {getIndexOfLargest(guess), guess[getIndexOfLargest(guess)]};
 }
 
 // https://stackoverflow.com/questions/10813154/how-do-i-convert-a-number-to-a-letter-in-java
 String getCharForNumber(int i) {
   return i > 0 && i < 27 ? String.valueOf((char)(i + 64)) : null;
+}
+
+int getNumberForChar(char c) {
+  return isAlphabetical(str(c)) ? ((int) c)-64 : 0;
 }
 
 String[] listFileNames(String dir) { //from https://processing.org/examples/directorylist.html
