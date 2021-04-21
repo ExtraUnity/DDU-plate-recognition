@@ -12,7 +12,8 @@ DataSet trainingLettersSet;
 DataSet testingLettersSet;
 DataSet trainingDigitsSet;
 DataSet testingDigitsSet;
-Button button;
+ArrayList<Button> buttons;
+static PImage pic;
 ArrayList<AnalysisResult> results = new ArrayList<AnalysisResult>();
 static PApplet p = new PApplet();
 
@@ -23,17 +24,19 @@ int debugCounter = 0;
 
 void setup() {
   size(900, 700);
+  pic = null;
   NeuralNetwork numberNet;
   NeuralNetwork letterNet;
   ImageUtils.main = this;
   String path = dataPath("");
-
+  buttons = new ArrayList<Button>();
 
   //background(0);
 
 
   try {
-    button = new Button(800, 250, 100, 30, "Select a file");
+    buttons.add(new Button(800, 250, 100, 30, "Select a file"));
+    buttons.add(new Button(800, 400, 100, 30, "Test program"));
     letterNet = NeuralNetwork.loadNetwork(path + "\\networks\\letterNet.txt");
     numberNet = NeuralNetwork.loadNetwork(path + "\\networks\\numberNet.txt");
 
@@ -66,11 +69,14 @@ void setup() {
 }
 
 void draw() {
-  button.render();
+  for (Button b : buttons) b.render();
   try {
-    println(results.get(0).toString());
+    image(pic,0,0);
     results.get(0).renderPictures();
-    noLoop();
+    //background(255);
+    //results.get(0).renderPictures();
+
+    //noLoop();
   } 
   catch(Exception e) {
     //println(e);
@@ -78,7 +84,11 @@ void draw() {
 }
 
 void mousePressed() {
-  if (button.pressed()) selectFile();
+  if (buttons.get(0).pressed()) selectFile();
+  else if (buttons.get(1).pressed()) {
+    String path = dataPath("") + "\\plates";
+    results = testPlates(path);
+  }
 }
 
 void exportPicture(PImage plate, String fileName) {
@@ -88,6 +98,23 @@ void exportPicture(PImage plate, String fileName) {
 
 void selectFile() {
   selectInput("Select a file to process:", "fileSelected");
+}
+
+ArrayList<AnalysisResult> testPlates(String path) {
+  ArrayList<AnalysisResult> output = new ArrayList<AnalysisResult>();
+  String[] plateNames = listFileNames(path);
+  int correct = 0;
+  for (String s : plateNames) {
+    File location = new File(path + "\\" + s);
+    AnalysisResult car = analyseImage(location);
+    if (car == null) car = new AnalysisResult(s.substring(0, s.length()-4), "", 0, null, null, null);
+    output.add(car);
+    println(car.toString());
+    if (car.analysisCorrect()) correct++;
+  }
+  println("Total accuracy: " + (double)correct/plateNames.length*100 + "%");
+
+  return output;
 }
 
 AnalysisResult analyseImage(File selection) {
@@ -126,15 +153,16 @@ AnalysisResult analyseImage(File selection) {
       }
     }
     time = System.nanoTime();
-    plate = plateLocalisation(mainPicture, textColor);
+    plate = plateLocalisation(mainPicture, textColor, numberNet, letterNet);
+    if (plate == null) return null;
     segmentedPictures = Segmentation.blobSegmentation(plate.img, this, numberNet, letterNet, this);
+    if (segmentedPictures == null) return null;
     foundName = recognizeImages(segmentedPictures, numberNet, letterNet, format);
     time = System.nanoTime() - time;
   } 
   catch(Exception e) {
     println(e);
   }
-
   return new AnalysisResult(expectedName, foundName, time, mainPicture, plate, segmentedPictures);
 }
 
@@ -169,20 +197,20 @@ DataSet createSet(String path, int amount, int inputLength, int outputLength, in
 
     char orgImgName = orgImgNames[index].charAt(0);
     int target;
-    if(isAlphabetical(str(orgImgName))) target = getNumberForChar(orgImgName);
+    if (isAlphabetical(str(orgImgName))) target = getNumberForChar(orgImgName);
     else target = Integer.parseInt(str(orgImgName));
-    
+
     double[] output = new double[outputLength];
-    if(outputLength == 1) output[0] = target;
-    else output = createLabels(target,outputLength);
+    if (outputLength == 1) output[0] = target;
+    else output = createLabels(target, outputLength);
     double[] input = new double[inputLength];
 
     for (int j = 0; j<distortedImg.pixels.length; j++) {
       input[j] = ((double)red(distortedImg.pixels[j])) / ((double)255);
     }
-    
+
     set.addData(input, output);
-    
+
     if (i%(amount/10)==0) println(i/(amount/100) + "% created, " + "time:" + (System.nanoTime()-time)/1000000 + "ms");
   }
 
@@ -192,7 +220,7 @@ DataSet createSet(String path, int amount, int inputLength, int outputLength, in
 PImage distortImage(PImage orgImg, int maxDots) {
   PImage newImg = ImageUtils.lowerResolution(orgImg);
   newImg = ImageUtils.stretchRandom(newImg);
-  newImg.filter(THRESHOLD, random(0.05,0.5)); //resolution changes the color of some pixels
+  newImg.filter(THRESHOLD, random(0.05, 0.5)); //resolution changes the color of some pixels
   newImg = ImageUtils.cropBorders(newImg);
   newImg = ImageUtils.fitInto(newImg, 20, 20, color(0));
   newImg = ImageUtils.centerWithMassInto(newImg, 28, 28, color(0));
@@ -210,10 +238,10 @@ double[] useNeuralNetwork(PImage _img, NeuralNetwork network) {
   /*
   this might become part of another step
    */
+
   img.filter(INVERT);
 
   img.resize(0, height);
-
   /*
   Preprocess image to look like the ones from EMNIST database
    */
@@ -432,6 +460,7 @@ String recognizeImages(ArrayList <PImage> images, NeuralNetwork numberNet, Neura
   String outputs = ""; 
   for (int i = 0; i<images.size(); i++) {
     if (isAlphabetical(str((format.charAt(i))))) {
+
       outputs += getCharForNumber((int)useNeuralNetwork(images.get(i), letterNet)[0] );
     } else {
       outputs += str((int)useNeuralNetwork(images.get(i), numberNet)[0]);
@@ -501,11 +530,11 @@ static boolean containsValue(int[] a, int n) {
   return false;
 }
 
-Picture plateLocalisation(PImage orgImg, String textColor) {
-  return plateLocalisation(orgImg, 0.005, 0.3, 3, 5, textColor);
+Picture plateLocalisation(PImage orgImg, String textColor, NeuralNetwork numberNet, NeuralNetwork letterNet) {
+  return plateLocalisation(orgImg, 0.005, 0.2, 0.3, 1.5, 6, textColor, numberNet, letterNet);
 }
 
-Picture plateLocalisation(PImage orgImg, double minArea, double percentBlack, double aspectLow, double aspectHigh, String textColor) {
+Picture plateLocalisation(PImage orgImg, double minArea, double maxArea, double percentBlack, double aspectLow, double aspectHigh, String textColor, NeuralNetwork numberNet, NeuralNetwork letterNet) {
   orgImg.resize(700, 0);
   int orgImgHeight = orgImg.height;
   orgImg = orgImg.get(0, orgImg.height/3, orgImg.width, 2*orgImg.height/3);
@@ -513,20 +542,37 @@ Picture plateLocalisation(PImage orgImg, double minArea, double percentBlack, do
 
   blurImg.filter(GRAY);
   blurImg.filter(BLUR, 1.4);
-  blurImg.filter(THRESHOLD, 0.7);
-  if (textColor.equals("black")) blurImg.filter(INVERT);       
+  //println(ImageUtils.medianBrightness(blurImg), ImageUtils.averageBrightness(blurImg));
+  blurImg.filter(THRESHOLD, 0.62);
+  if (textColor.equals("black")) blurImg.filter(INVERT);   
+  pic = blurImg;
   ArrayList<Picture> components = Segmentation.connectedComponentAnalysis(blurImg, this);
   ArrayList<Picture> removes = new ArrayList<Picture>();
   for (int i = 0; i<components.size(); i++) {
     Picture p = components.get(i);
-    if (componentTooSmall(p, blurImg, minArea) || foregroundAreaTooSmall(p, percentBlack) || aspectIntervalWrong(p, aspectLow, aspectHigh)) {
+    if (componentTooSmall(p, blurImg, minArea) || foregroundAreaTooSmall(p, percentBlack) || aspectIntervalWrong(p, aspectLow, aspectHigh) || componentTooBig(p, blurImg, maxArea)) {
       removes.add(p);
     }
   }
   components.removeAll(removes);
   println(components.size());
+  //Collections.sort(components,Collections.reverseOrder());
+  if (components.size()>1) {
+    removes = new ArrayList<Picture>();
+    for (Picture p : components) {
+      if (Segmentation.blobSegmentation(orgImg.get(p.boundingBox[0], p.boundingBox[1], p.width, p.height), this, numberNet, letterNet, this).size()<6) {
+        //println(Segmentation.blobSegmentation(p.img,this,numberNet,letterNet,this).size());
+        removes.add(p);
+      }
+    }
+    components.removeAll(removes);
+    println(components.size());
+  }
+  if (components.size() == 0) return null;
+
   int i = 0;
   Picture plate = components.get(i);
+
   PImage orgPlate = orgImg.get(components.get(i).boundingBox[0], components.get(i).boundingBox[1], components.get(i).width, components.get(i).height);
   plate.img = orgPlate;
   plate.boundingBox = new int[]{plate.boundingBox[0], plate.boundingBox[1]+orgImgHeight/3, plate.boundingBox[2], plate.boundingBox[3]+orgImgHeight/3};
@@ -538,6 +584,10 @@ boolean componentTooSmall(Picture p, PImage img, double minArea) {
   return p.width*p.height < minArea*img.width*img.height;
 }
 
+boolean componentTooBig(Picture p, PImage img, double maxArea) {
+  return p.width*p.height > maxArea*img.width*img.height;
+}
+
 boolean foregroundAreaTooSmall(Picture p, double percentBlack) {
   return Segmentation.countBlackPix(p.img, this)/ (double)p.img.pixels.length < percentBlack;
 }
@@ -545,6 +595,8 @@ boolean foregroundAreaTooSmall(Picture p, double percentBlack) {
 boolean aspectIntervalWrong(Picture p, double lower, double upper) {
   return p.img.width/ (double)p.img.height > upper || p.img.width/ (double)p.img.height < lower;
 }
+
+
 
 boolean isAlphabetical(String c) {
   return c.matches("[a-zA-Z]+"); //taken from https://stackoverflow.com/questions/5238491/check-if-string-contains-only-letters/29836318

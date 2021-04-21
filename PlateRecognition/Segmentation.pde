@@ -79,9 +79,10 @@ static class Segmentation {  //<>//
   }
 
   static PImage preprossing(PImage plate, PApplet outer) {
+    if (plate == null) return null;
     plate.resize(700, 0);
     plate.filter(GRAY);
-    //plate = ImageUtils.contrastExtension(plate,outer);
+    //plate = ImageUtils.contrastExtension(plate);
     plate = ImageUtils.filterImageByMedian(plate, outer);
     plate.resize(plate.width+1, plate.height+1);
     //println(ImageUtils.averageBrightness(plate, outer), ImageUtils.medianBrightness(plate, outer), (ImageUtils.averageBrightness(plate, outer)+ ImageUtils.medianBrightness(plate, outer))/2.0);
@@ -99,7 +100,7 @@ static class Segmentation {  //<>//
   static ArrayList <PImage> blobSegmentation(PImage plate, PApplet outer, NeuralNetwork numberNetwork, NeuralNetwork letterNetwork, PlateRecognition main) {
     // Based on Yoon, 2011
     plate = preprossing(plate, outer);
-
+    //pic = plate;
     ArrayList <Picture> blobs = connectedComponentAnalysis(plate, outer);
 
     ArrayList <Picture> nonCharBlobs = new ArrayList <Picture>();
@@ -109,19 +110,20 @@ static class Segmentation {  //<>//
     }
 
     blobs.removeAll(nonCharBlobs);
-    if(blobs.size()==0) {
-     ArrayList<PImage> arr = new ArrayList<PImage>();
-     arr.add(plate);
-     return arr;
+    if (blobs.size()==0) {
+      ArrayList<PImage> arr = new ArrayList<PImage>();
+      arr.add(plate);
+      return arr;
     }
     blobs = blobSplit(blobs, plate, outer);
 
     //blobs = blobSplit(blobs, outer);
-    blobs = doubleLineSort(plate, blobs, outer);
-    
+    Collections.sort(blobs); 
+    //blobs = doubleLineSort(plate, blobs, outer);
 
-    
-//println("hello2");
+
+
+    //println("hello2");
     //int k = 4;
     //isCharacterImage(blobs.get(k), plate, outer);
     //outer.image(blobs.get(k).img, 0, 0);
@@ -160,6 +162,7 @@ static class Segmentation {  //<>//
     while (output.size()>7) {  
       double[] confidencesa = new double[confidences.size()];
       for (int i = 0; i<confidences.size(); i++) confidencesa[i] = (double) confidences.get(i);
+
       output.remove(main.getIndexOfSmallest(confidencesa));
       confidences.remove(main.getIndexOfSmallest(confidencesa));
     }
@@ -187,6 +190,7 @@ static class Segmentation {  //<>//
 
     return lessHalf && fourTop;
   }
+
 
   static ArrayList <Picture> doubleLineSort(PImage plate, ArrayList <Picture> blobs, PApplet outer) {
     if (!isDoubleLine(plate, blobs, outer)) {
