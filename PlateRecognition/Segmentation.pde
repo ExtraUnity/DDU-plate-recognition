@@ -330,7 +330,7 @@ static class Segmentation {  //<>//
         queue.add(0, i);
         while (queue.size()>0) {
           int index = queue.pop(); // return the element and removes it from the list
-          for (int j = index>plate.width ? -plate.width: 0; j<= (index<pix.length-plate.width ? plate.width: 0); j+= plate.width) { // this is not horror :)
+          for (int j = index>plate.width ? -plate.width: 0; j<= (index<pix.length-plate.width ? plate.width: 0); j+= plate.width) { // check in eight direction unless at the edges
             for (int k = index%plate.width >0 ? -1: 0; k<= (index%plate.width < plate.width-1 ? 1: 0 ); k++) {
               if (pix[index+j+k].isBlack()&& pix[index+j+k].label == 0) {
                 pix[index+j+k].label = currentLabel;

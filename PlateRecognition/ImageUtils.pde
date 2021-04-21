@@ -101,7 +101,7 @@ static class ImageUtils {
     }
 
     PImage scaledImg = img.copy();
-    scaledImg.resize((int)newImgWidth, (int)newImgHeight);
+    scaledImg.resize(round(newImgWidth), round(newImgHeight));
 
     PImage newImg = main.createImage(newWidth, newHeight, ARGB);
 
