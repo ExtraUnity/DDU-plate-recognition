@@ -156,7 +156,7 @@ AnalysisResult analyseImage(File selection) {
     time = System.nanoTime();
     plate = plateLocalisation(mainPicture, textColor, numberNet, letterNet);
     if (plate == null) return null;
-    segmentedPictures = Segmentation.blobSegmentation(plate.img, this, numberNet, letterNet, this);
+    segmentedPictures = Segmentation.blobSegmentation(plate.img, numberNet, letterNet, this);
     if (segmentedPictures == null) return null;
     foundName = recognizeImages(segmentedPictures, numberNet, letterNet, format);
     time = System.nanoTime() - time;
@@ -446,7 +446,7 @@ Picture plateLocalisation(PImage orgImg, double minArea, double maxArea, double 
   if (components.size()>1) {
     removes = new ArrayList<Picture>();
     for (Picture p : components) {
-      if (Segmentation.blobSegmentation(orgImg.get(p.boundingBox[0], p.boundingBox[1], p.width, p.height), this, numberNet, letterNet, this).size()<6) {
+      if (Segmentation.blobSegmentation(orgImg.get(p.boundingBox[0], p.boundingBox[1], p.width, p.height), numberNet, letterNet, this).size()<6) {
         //println(Segmentation.blobSegmentation(p.img,this,numberNet,letterNet,this).size());
         removes.add(p);
       }
