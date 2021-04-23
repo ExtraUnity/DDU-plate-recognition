@@ -1,112 +1,27 @@
 static class Segmentation {  //<>//
-  static ArrayList <PImage> plateSegmentation(PImage plate, PApplet outer) {
-    // based on Koo et al, 2009
 
-    plate = preprossing(plate, outer);
-
-    color[] pix = plate.pixels;
-    float[] colVal = new float[plate.width];
-    outer.image(plate, 0, 0);
-
-    int[][] verticalBreaks = new int[plate.width][2];
-    outer.image(plate, 0, 0);
-
-
-    for (int col = 0; col<plate.width; col++) {
-      int breakTop = 0;
-      int breakBottom = plate.height;
-
-      for (int row = 0; row<plate.height; row++) {
-        if (outer.red(pix[row*plate.width+col]) == 255) {
-          breakTop = row; 
-          break;
-        }
-      }
-
-      for (int row = plate.height-1; row>=0; row--) {
-        if (outer.red(pix[row*plate.width+col]) == 255) {
-          breakBottom = row; 
-          break;
-        }
-      }
-
-      for (int row = breakTop; row <breakBottom; row++) {
-        if (outer.red(pix[row*plate.width+col]) == 255) {
-          colVal[col] ++;
-        }
-      }
-      verticalBreaks[col][0] = breakTop;
-      verticalBreaks[col][1] = breakBottom;
-
-      colVal[col] /= breakBottom-breakTop;
-    }
-
-    ArrayList<Integer> whiteSpace = new ArrayList<Integer>();
-    for (int i = 0; i<colVal.length; i++) {
-      if (colVal[i] >= 0.9) { // this number controlls how many percent of the collumn that must be white for it to be considered a empty line
-        whiteSpace.add(i); 
-        outer.stroke(#ff0000);
-        //outer.line(i, 0, i, outer.height);
-      }
-    }
-
-    ArrayList<Integer> breakpoints = new ArrayList<Integer>();
-    for (int i = 1; i<whiteSpace.size()-1; i++) {
-      if (whiteSpace.get(i+1) - whiteSpace.get(i) >1 || whiteSpace.get(i) - whiteSpace.get(i-1) >1) {
-        breakpoints.add(whiteSpace.get(i));
-        outer.stroke(#00ff00);
-        //outer.line(whiteSpace.get(i), 0, whiteSpace.get(i), outer.height);
-      }
-    }
-
-
-    ArrayList <PImage> output = new ArrayList <PImage>();
-
-    for (int i = 0; i< breakpoints.size(); i+= 2) {
-      int _width = breakpoints.get(i+1) -  breakpoints.get(i);
-
-      int[] range = findSmallestLength(verticalBreaks, breakpoints.get(i), breakpoints.get(i+1), plate.height);
-
-      output.add(plate.get(breakpoints.get(i), range[0], _width, range[1]-range[0]));
-      outer.image(output.get(output.size()-1), breakpoints.get(i), 200);
-    }
-
-    if (output.size() == 0) {
-      output.add(plate);
-    }
-
-    return output;
-  }
-
-  static PImage preprossing(PImage plate, PApplet outer) {
+  static PImage preprossing(PImage plate) {
     if (plate == null) return null;
     plate.resize(700, 0);
     plate.filter(GRAY);
-    //plate = ImageUtils.contrastExtension(plate);
-    plate = ImageUtils.filterImageByMedian(plate, outer);
+    plate = ImageUtils.filterImageByMedian(plate);
     plate.resize(plate.width+1, plate.height+1);
-    //println(ImageUtils.averageBrightness(plate, outer), ImageUtils.medianBrightness(plate, outer), (ImageUtils.averageBrightness(plate, outer)+ ImageUtils.medianBrightness(plate, outer))/2.0);
-    //plate.filter(THRESHOLD, ); // find the average intensity to filter dynamicly insted of taking a static value
-    //outer.image(plate, 0, 0);
     plate.filter(THRESHOLD, (ImageUtils.averageBrightness(plate)+ ImageUtils.medianBrightness(plate))/2.0);
-    //outer.image(plate, 0, 250);
     plate = ImageUtils.cropBorders(plate);
-
 
     return plate;
   }
 
 
-  static ArrayList <PImage> blobSegmentation(PImage plate, PApplet outer, NeuralNetwork numberNetwork, NeuralNetwork letterNetwork, PlateRecognition main) {
+  static ArrayList <PImage> blobSegmentation(PImage plate, NeuralNetwork numberNetwork, NeuralNetwork letterNetwork, PlateRecognition main) {
     // Based on Yoon, 2011
-    plate = preprossing(plate, outer);
-    //pic = plate;
-    ArrayList <Picture> blobs = connectedComponentAnalysis(plate, outer);
+    plate = preprossing(plate);
+    ArrayList <Picture> blobs = connectedComponentAnalysis(plate, main);
 
     ArrayList <Picture> nonCharBlobs = new ArrayList <Picture>();
 
     for (int i = 0; i<blobs.size(); i++) {
-      if (!isCharacterImage(blobs.get(i), plate, outer)) nonCharBlobs.add(blobs.get(i));
+      if (!isCharacterImage(blobs.get(i), plate, main)) nonCharBlobs.add(blobs.get(i));
     }
 
     blobs.removeAll(nonCharBlobs);
@@ -115,44 +30,18 @@ static class Segmentation {  //<>//
       arr.add(plate);
       return arr;
     }
-    blobs = blobSplit(blobs, plate, outer);
+    blobs = blobSplit(blobs, plate, main);
 
-    //blobs = blobSplit(blobs, outer);
     Collections.sort(blobs); 
-    //blobs = doubleLineSort(plate, blobs, outer);
 
-
-
-    //println("hello2");
-    //int k = 4;
-    //isCharacterImage(blobs.get(k), plate, outer);
-    //outer.image(blobs.get(k).img, 0, 0);
-
-    // visual feedback system:
-    /*
-    outer.background(125);
-     outer.stroke(#00ff00);
-     int xCord = 0; 
-     for (int i = 0; i< blobs.size(); i++) {
-     if (i == 0) { 
-     outer.image(blobs.get(i).img, 0, 0);
-     } else {
-     outer.rect(xCord+blobs.get(i-1).img.width, 0, blobs.get(i).img.width, blobs.get(i).img.height);
-     outer.image(blobs.get(i).img, xCord+blobs.get(i-1).img.width, 0);
-     xCord+= blobs.get(i-1).img.width;
-     }
-     xCord+= 5;
-     }
-     */
 
     ArrayList <PImage> output = new ArrayList <PImage>();
     for (Picture p : blobs) output.add(p.img);
-    //println();
+
     ArrayList<Double> confidences = new ArrayList<Double>();
 
     for (PImage p : output) {
 
-      //THIS GIVES THE EXCEPTION: java.lang.IllegalArgumentException: Width (0) and height (43) cannot be <= 0
       double[] numberConfidence = main.useNeuralNetwork(p, numberNetwork);
       double[] letterConfidence = main.useNeuralNetwork(p, letterNetwork);
 
@@ -168,49 +57,6 @@ static class Segmentation {  //<>//
     }
 
     return output;
-  }
-
-  static boolean isDoubleLine(PImage plate, ArrayList <Picture> blobs, PApplet outer) {
-    int[] heights = new int[blobs.size()];
-
-    for (int i = 0; i<heights.length; i++) {
-      heights[i] = blobs.get(i).img.height;
-    }
-
-    int median = ImageUtils.median(heights);
-
-    boolean lessHalf = median < 0.5 * plate.height;
-
-    int topHalf = 0; 
-    for (Picture p : blobs) {
-      if (p.center[1] < 0.5 * plate.height) topHalf++;
-    }
-
-    boolean fourTop = topHalf == 4;
-
-    return lessHalf && fourTop;
-  }
-
-
-  static ArrayList <Picture> doubleLineSort(PImage plate, ArrayList <Picture> blobs, PApplet outer) {
-    if (!isDoubleLine(plate, blobs, outer)) {
-      Collections.sort(blobs); 
-      return blobs;
-    }
-
-    ArrayList <Picture> top = new ArrayList <Picture>();
-    ArrayList <Picture> bottom = new ArrayList <Picture>();
-
-    for (Picture p : blobs) {
-      if (p.center[1] < 0.5 * plate.height) top.add(p);
-      else bottom.add(p);
-    }
-
-    Collections.sort(top);
-    Collections.sort(bottom);
-    top.addAll(bottom);
-
-    return top;
   }
 
   static ArrayList <Picture> blobSplit(ArrayList <Picture> blobs, PImage plate, PApplet outer) {
@@ -386,48 +232,7 @@ static class Segmentation {  //<>//
       pics.add(new Picture(allBlob.get(i), boundingBoxes.get(i)));
     }
     Collections.sort(pics);
-    //allBlob.clear();
-    //for (Picture p : pics) allBlob.add(p.img);
 
     return pics;
-  }
-
-
-
-  static int[] findSmallestLength(int[][] breaks, int start, int stop, int _height) {
-    int max = _height, min = 0;
-    for (int i = start; i < stop; i++) {
-      min = max(min, breaks[i][0]);
-      max = min(max, breaks[i][1]);
-    }
-    return new int[] {min, max};
-  }
-}
-
-static class Picture implements Comparable<Picture> {
-  PImage img;
-  int[] boundingBox;
-  int[] center;
-  int width;
-  int height;
-  Picture(PImage _img, int[] boundingBox) {
-    this.img = _img;
-    this.boundingBox = boundingBox;
-    this.width = boundingBox[2]-boundingBox[0];
-    this.height = boundingBox[3]-boundingBox[1];
-    this.center = this.center();
-  }
-  Picture() {
-  }
-
-  public int compareTo(Picture other) {
-    return round(this.boundingBox[0] - other.boundingBox[0]);
-  }
-
-  private int[] center() {
-    int[] output = new int[]{0, 0};
-    output[0] = (this.boundingBox[0] + this.boundingBox[2])/2;
-    output[1] = (this.boundingBox[1] + this.boundingBox[3])/2;
-    return output;
   }
 }

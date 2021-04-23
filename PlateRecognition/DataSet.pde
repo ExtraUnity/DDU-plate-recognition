@@ -30,29 +30,7 @@ class DataSet {
     return this;
   }
 
-  int[] getRandomValues(int lower, int upper, int size) {
 
-    int[] is = new int[size];
-    for (int i = 0; i< size; i++) {
-      int n = (int)random(lower, upper);
-      while (containsValue(is, n)) {
-        n = (int)random(lower, upper);
-      }
-
-      is[i] = n;
-    }
-    return is;
-  }
-
-  boolean containsValue(int[] a, int n) {
-    for (int i : a) {
-      if (i==n) {
-        return true;
-      }
-    }
-
-    return false;
-  }
   double[] getInput(int i) {
     return data.get(i)[0];
   }

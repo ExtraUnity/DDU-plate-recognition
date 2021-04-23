@@ -24,6 +24,7 @@ int debugCounter = 0;
 
 void setup() {
   size(900, 700);
+  surface.setTitle("Automatic Number Plate Recognition System");
   pic = null;
   NeuralNetwork numberNet;
   NeuralNetwork letterNet;
@@ -227,6 +228,7 @@ PImage distortImage(PImage orgImg, int maxDots) {
   newImg = ImageUtils.randomDots(newImg, maxDots);
   return newImg;
 }
+
 double[] useNeuralNetwork(String path, NeuralNetwork network) {
   PImage img = loadImage(path);
   return useNeuralNetwork(img, network);
@@ -235,48 +237,17 @@ double[] useNeuralNetwork(String path, NeuralNetwork network) {
 double[] useNeuralNetwork(PImage _img, NeuralNetwork network) {
   PImage img = _img.get();
 
-  /*
-  this might become part of another step
-   */
 
   img.filter(INVERT);
 
   img.resize(0, height);
   /*
-  Preprocess image to look like the ones from EMNIST database
+  Normalize images to look like the database
    */
-
-  // The images must be drawn on the screeen if they are to be rotated and flipped
-
-  //translate(width/2, height/2);
-  //rotate(-PI/2);
-  //scale(-1, 1);
-  //translate(-width/2, -height/2);
-
-  //image(img, 0, 0);
-
-  //translate(width/2, height/2);
-  //scale(-1, 1);
-  //rotate(PI/2);
-  //translate(-width/2, -height/2);
-
-  //loadPixels();
-  //background(0);
-
-  //img = createImage(width, height, ALPHA);
-  //img.pixels = pixels;
-  //int[] pix = img.pixels;
-  //pix = rotateArrayQuarter(pix, (int) sqrt(pix.length), (int) sqrt(pix.length));
-  //pix = flipArray(pix, (int) sqrt(pix.length), (int) sqrt(pix.length));
-  //img.pixels = rotateArrayQuarter(img.pixels, (int) sqrt(img.pixels.length), (int) sqrt(img.pixels.length));
-  //img.pixels = flipArray(img.pixels, (int) sqrt(img.pixels.length), (int) sqrt(img.pixels.length));
-  //img.pixels = pix;
 
   img = ImageUtils.cropBorders(img); 
   img = ImageUtils.fitInto(img, 20, 20, color(0));
   img = ImageUtils.centerWithMassInto(img, 28, 28, color(0));
-
-  //image(img, 0, 0);
 
   double[] pixelList = new double[img.pixels.length];
 
@@ -284,8 +255,6 @@ double[] useNeuralNetwork(PImage _img, NeuralNetwork network) {
     pixelList[i] = (double)(brightness(img.pixels[i])) / ((double)256);
   }
 
-
-  //pixelList = flipArray(pixelList, (int) sqrt(pixelList.length), (int) sqrt(pixelList.length));
   double[] guess = network.feedForward(pixelList, 0);
   return new double[] {getIndexOfLargest(guess), guess[getIndexOfLargest(guess)]};
 }
@@ -308,62 +277,6 @@ String[] listFileNames(String dir) { //from https://processing.org/examples/dire
     // If it's not a directory
     return null;
   }
-}
-
-DataSet createTrainingSet(int lower, int upper, int inputSize, int outputSize, String imageFile, String labelFile) throws IOException {
-  DataSet set = new DataSet(inputSize, outputSize); //input size output size
-
-  try {
-    MnistReader fileReader = new MnistReader();
-    String path = dataPath("");
-    int[][] trainingImages = fileReader.loadMnistImages(new File(path + "\\" + imageFile)); 
-    int[] trainingLabels = fileReader.loadMnistLabels(new File(path +"\\" + labelFile));
-    for (int i = lower; i<upper; i++) {
-      double[] input = new double[inputSize];
-      double[] output = new double[outputSize];
-
-      output = createLabels(trainingLabels[i], output.length);
-
-      for (int j = 0; j<trainingImages[i].length; j++) {
-        input[j] = ((double)trainingImages[i][j]) / ((double)256);
-      }
-      input = rotateArrayQuarter(input, (int) sqrt(input.length), (int) sqrt(input.length));
-      input = flipArray(input, (int) sqrt(input.length), (int) sqrt(input.length));
-      set.addData(input, output);
-    }
-  } 
-  catch(Exception e) {
-    println(e);
-  }
-  return set;
-}
-
-DataSet createTestingSet(int lower, int upper, int inputSize, int outputSize, String imageFile, String labelFile) throws IOException {
-  DataSet set = new DataSet(inputSize, outputSize); 
-
-  try {
-    MnistReader fileReader = new MnistReader();
-    String path = dataPath("");
-    int[][] trainingImages = fileReader.loadMnistImages(new File(path + "\\" + imageFile)); 
-    int[] trainingLabels = fileReader.loadMnistLabels(new File(path +"\\" + labelFile));
-    for (int i = lower; i<upper; i++) {
-      double[] input = new double[inputSize];
-      double[] output = new double[outputSize];
-
-      output[0] = (double)trainingLabels[i];
-
-      for (int j = 0; j<trainingImages[i].length; j++) {
-        input[j] = ((double)trainingImages[i][j]) / ((double)256);
-      }
-      input = rotateArrayQuarter(input, (int) sqrt(input.length), (int) sqrt(input.length));
-      input = flipArray(input, (int) sqrt(input.length), (int) sqrt(input.length));
-      set.addData(input, output);
-    }
-  } 
-  catch(Exception e) {
-    println(e);
-  }
-  return set;
 }
 
 
@@ -483,40 +396,12 @@ int alphaToPixel(int gray) {
 //  return output;
 //}
 
-static double[] rotateArrayQuarter(double[] arr, int arrWidth, int arrHeight) {
-  double[] output = new double[arr.length];
-  for (int col = 0; col<arrWidth; col++) {
-    for (int row = 0; row<arrHeight; row++) {
-      output[col*arrWidth+row] = arr[arr.length + col - arrWidth*(row+1)];
-    }
-  }
-  return output;
-}
-
-static double[] flipArray(double[] arr, int arrWidth, int arrHeight) {
-  double[] output = new double[arr.length];
-
-  for (int row = 0; row<arrHeight; row++) {
-    int col = 0;
-    while (col<arrWidth) {
-      output[row*arrWidth+col] = arr[(row+1)*arrWidth-1-col];
-      col++;
-    }
-  }
-
-  return output;
-}
-
 static int[] getRandomValues(int lower, int upper, int size) {
   Random indexGenerator = new Random();
   int[] is = new int[size];
   for (int i = 0; i< size; i++) {
     int n = indexGenerator.nextInt((upper-lower)) + lower;
-    while (containsValue(is, n)) {
-      n = indexGenerator.nextInt((upper-lower)) + lower;
-      ;
-    }
-
+    while (containsValue(is, n)) n = indexGenerator.nextInt((upper-lower)) + lower;
     is[i] = n;
   }
   return is;
@@ -545,7 +430,9 @@ Picture plateLocalisation(PImage orgImg, double minArea, double maxArea, double 
   //println(ImageUtils.medianBrightness(blurImg), ImageUtils.averageBrightness(blurImg));
   blurImg.filter(THRESHOLD, 0.62);
   if (textColor.equals("black")) blurImg.filter(INVERT);   
+  
   pic = blurImg;
+  
   ArrayList<Picture> components = Segmentation.connectedComponentAnalysis(blurImg, this);
   ArrayList<Picture> removes = new ArrayList<Picture>();
   for (int i = 0; i<components.size(); i++) {
@@ -555,7 +442,6 @@ Picture plateLocalisation(PImage orgImg, double minArea, double maxArea, double 
     }
   }
   components.removeAll(removes);
-  println(components.size());
   //Collections.sort(components,Collections.reverseOrder());
   if (components.size()>1) {
     removes = new ArrayList<Picture>();
@@ -566,7 +452,6 @@ Picture plateLocalisation(PImage orgImg, double minArea, double maxArea, double 
       }
     }
     components.removeAll(removes);
-    println(components.size());
   }
   if (components.size() == 0) return null;
 
