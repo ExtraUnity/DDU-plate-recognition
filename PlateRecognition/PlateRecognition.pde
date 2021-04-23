@@ -68,7 +68,7 @@ void setup() {
     //PImage test = loadImage(path+"\\plates\\AB.png");
     background(255);
     PImage test;
-    test = loadImage(path+"\\plates\\CW450777.jpg");
+    test = loadImage(path+"\\plates\\CW24077.jpg");
     test.resize(700, 0);
     test.filter(GRAY);
     PImage p = ImageUtils.cannyEdgeDetector(test, this);
