@@ -156,7 +156,6 @@ static class ImageUtils {
         newImg.pixels[(startY)*newImg.width+(startX)] = main.alphaToPixel(median(imgMatrix));
       }
     }
-    //img.filter(INVERT);
     newImg.filter(INVERT);
     return newImg;
   }
@@ -167,7 +166,6 @@ static class ImageUtils {
   }
 
   static float medianBrightness(PImage img) {
-    //image.filter(GRAY);
     int[] brightnesses = new int[img.pixels.length];
     for (int i = 0; i < brightnesses.length; i++) {
       brightnesses[i] = (int)main.red(img.pixels[i]);
