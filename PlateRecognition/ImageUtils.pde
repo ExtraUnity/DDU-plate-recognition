@@ -388,8 +388,11 @@ static class ImageUtils {
     }
   }
 
-  static int[] plateLocation(PImage img, PApplet outer) {
-    // TODO: implement this
+  static int[] plateLocation(PImage img, PApplet outer) { // the picture needs to be a canny edge picture. 
+    PImage cutImage = img.get(0, 0, img.width, img.height);
+
+  
+    
     
     return new int[]{0, 0, 0, 0}; // upper left x, y;  lower right x, y.
   }
