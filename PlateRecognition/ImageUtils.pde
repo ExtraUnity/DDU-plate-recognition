@@ -1,6 +1,39 @@
 static class ImageUtils {
   static PlateRecognition main;
-  static PImage cropBorders(PImage img, PApplet main) {
+
+  static PImage stretchRandom(PImage img) {
+    PImage newImg = img.get();
+    int imgWidth = img.width;
+    int imgHeight = img.height;
+    int newWidth = (int)(main.random(0.8, 1.2)*imgWidth);
+    int newHeight = (int)(main.random(0.8, 1.2)*imgHeight);
+    newImg.resize(newWidth, newHeight); //NOTE: resize() takes a very long time
+    newImg.resize(0, imgHeight);
+    return newImg;
+  }
+
+  static PImage lowerResolution(PImage img) {
+    PImage newImg = img.get();
+    int imgWidth = img.width;
+    int imgHeight = img.height;
+    float random = main.random(0.1, 0.2); 
+    newImg.resize(ceil(random*imgWidth), ceil(random*imgHeight)); //lowers to random amount between 10% and 20%
+    newImg.resize(imgWidth, imgHeight); //return the same image but lower resolution
+    return newImg;
+  }
+
+  static PImage randomDots(PImage img, int maxAmount) {
+    PImage newImg = img.get();
+    int random = (int)main.random(0, maxAmount); //random amount of dots
+    for (int i = 0; i<random; i++) {
+
+      newImg.pixels[(int)main.random(0, newImg.pixels.length)] = main.alphaToPixel((main.random(0, 1)>0.7 ? 255 : 0)); //70% black dots
+    }
+
+    return newImg;
+  }
+
+  static PImage cropBorders(PImage img) {
     int upperBound = 0, lowerBound = 0, rightBound = 0, leftBound = 0;
   upper: 
     for (int y = 0; y<img.height; y++) {
@@ -51,7 +84,7 @@ static class ImageUtils {
     return img.get(leftBound, upperBound, rightBound-leftBound, lowerBound-upperBound);
   }
 
-  static PImage fitInto(PImage img, int newWidth, int newHeight, int backgroundColor, PApplet main) {
+  static PImage fitInto(PImage img, int newWidth, int newHeight, int backgroundColor) {
 
     float sourceAspectRatio = (float) img.width / (float) img.height;
     float resultAspectRatio = (float) newWidth / (float) newHeight;
@@ -68,7 +101,7 @@ static class ImageUtils {
     }
 
     PImage scaledImg = img.copy();
-    scaledImg.resize((int)newImgWidth, (int)newImgHeight);
+    scaledImg.resize(round(newImgWidth), round(newImgHeight));
 
     PImage newImg = main.createImage(newWidth, newHeight, ARGB);
 
@@ -80,17 +113,17 @@ static class ImageUtils {
     return newImg;
   }
 
-  static PImage centerWithMassInto(PImage source, int imgWidth, int imgHeight, int backgroundColor, PApplet main) {
+  static PImage centerWithMassInto(PImage source, int imgWidth, int imgHeight, int backgroundColor) {
     PImage result = main.createImage(imgWidth, imgHeight, ARGB);
     for (int i = 0; i<result.pixels.length; i++) {
       result.pixels[i] = backgroundColor;
     }
-    int[] centerOfMass = computeCenterOfMass(source, main);
+    int[] centerOfMass = computeCenterOfMass(source);
     result.copy(source, 0, 0, source.width, source.height, round(result.width/2f)-centerOfMass[0], round(result.height/2f)-centerOfMass[1], source.width, source.height);
     return result;
   }
 
-  static int[] computeCenterOfMass(PImage img, PApplet main) {
+  static int[] computeCenterOfMass(PImage img) {
     long xSum = 0;
     long ySum = 0;
     long num = 0;
@@ -133,26 +166,27 @@ static class ImageUtils {
     return array[array.length/2];
   }
 
-  static float medianBrightness(PImage image, PApplet outer) {
+  static float medianBrightness(PImage image) {
     //image.filter(GRAY);
     int[] brightnesses = new int[image.pixels.length];
     for (int i = 0; i < brightnesses.length; i++) {
-      brightnesses[i] = (int)outer.red(image.pixels[i]);
+      brightnesses[i] = (int)main.red(image.pixels[i]);
     }
     brightnesses = sort(brightnesses);
     return (float) brightnesses[brightnesses.length/2]/255.0;
   }
 
-  static float averageBrightness(PImage image, PApplet outer) {
+  static float averageBrightness(PImage image) {
     image.filter(GRAY);
     float sum = 0;
     for (int i = 0; i < image.pixels.length; i++) {
-      sum += outer.red(image.pixels[i]);
+      sum += main.red(image.pixels[i]);
     }
     return (sum/image.pixels.length)/255.0;
   }
-
-  static PImage contrastExtension(PImage out, PApplet outer) {
+  
+  @Deprecated
+  static PImage contrastExtension(PImage out) {
     //  the contrast extension makes the image sharper
     /*
      Find the sum of the histogram values.
@@ -165,7 +199,7 @@ static class ImageUtils {
     float[] valueFrequency = new float[256];
 
     for (color c : out.pixels) {
-      valueFrequency[(int)outer.red(c)]++;
+      valueFrequency[(int)main.red(c)]++;
     }
 
     float[] cumulative  = new float[256];
@@ -175,13 +209,13 @@ static class ImageUtils {
       cumulative[i] = cumulative[i-1] + valueFrequency[i]/out.pixels.length;
     }
     for (int i = 0; i<out.pixels.length; i++) {
-      out.pixels[i] = main.alphaToPixel(floor(255 * cumulative[(int)outer.red(out.pixels[i])]));
+      out.pixels[i] = main.alphaToPixel(floor(255 * cumulative[(int)main.red(out.pixels[i])]));
     }
 
     float[] valueFrequencyPost = new float[256];
 
     for (color c : out.pixels) {
-      valueFrequencyPost[(int)outer.red(c)]++;
+      valueFrequencyPost[(int)main.red(c)]++;
     }
 
     float[] cumulativePost = new float[256];
@@ -209,21 +243,23 @@ static class ImageUtils {
     return Integer.parseUnsignedInt(binaryCombined, 2);
   }
 
-
+  
   // inspired by Edge Detection example in processing
-  static PImage cannyEdgeDetector(PImage img, PApplet outer) {
+  @Deprecated
+  static PImage cannyEdgeDetector(PImage img) {
     img.filter(BLUR, 1.4);
 
-    Edge[] edges = sobelFilter(img, outer);
+    Edge[] edges = sobelFilter(img);
 
-    PImage thinEdges = edgeThinning(img, edges, outer);
-    PImage output = hysteresis(thinEdges, 0.1, 0.3, outer); // wiki recommends 0.1 and 0.3
+    PImage thinEdges = edgeThinning(img, edges);
+    PImage output = hysteresis(thinEdges, 0.1, 0.3); // wiki recommends 0.1 and 0.3
 
     return output;
   }
-
-  static PImage edgeThinning(PImage img, Edge[] edges, PApplet outer) {
-    PImage output = outer.createImage(img.width-4, img.height-4, ARGB);
+  
+  @Deprecated
+  static PImage edgeThinning(PImage img, Edge[] edges) {
+    PImage output = main.createImage(img.width-4, img.height-4, ARGB);
 
     for (int row = 0; row < output.height; row++) {
       for (int col = 0; col < output.width; col++) {
@@ -276,14 +312,15 @@ static class ImageUtils {
   static enum Threshold {
     STRONG, WEAK, NONE
   }
-
-  static PImage hysteresis(PImage img, float lowThreshold, float highThreshold, PApplet outer) {
-    PImage output = outer.createImage(img.width-2, img.height-2, ARGB);
+  
+  @Deprecated
+  static PImage hysteresis(PImage img, float lowThreshold, float highThreshold) {
+    PImage output = main.createImage(img.width-2, img.height-2, ARGB);
     Threshold[] thresholds = new Threshold[img.pixels.length];
 
     for (int i = 0; i < img.pixels.length; i++) {
-      if (outer.red(img.pixels[i])/255d > highThreshold) thresholds[i] = Threshold.STRONG;
-      else if (outer.red(img.pixels[i])/255d < lowThreshold) thresholds[i] = Threshold.NONE;
+      if (main.red(img.pixels[i])/255d > highThreshold) thresholds[i] = Threshold.STRONG;
+      else if (main.red(img.pixels[i])/255d < lowThreshold) thresholds[i] = Threshold.NONE;
       else thresholds[i] = Threshold.WEAK;
     }
 
@@ -312,8 +349,8 @@ static class ImageUtils {
     return output;
   }
 
-
-  static Edge[] sobelFilter(PImage img, PApplet outer) {
+  @Deprecated
+  static Edge[] sobelFilter(PImage img) {
     int [][] xKernel= new int[][] { {1, 0, -1}, 
       {2, 0, -2}, 
       {1, 0, -1}};
@@ -325,7 +362,7 @@ static class ImageUtils {
     int lengthOut = img.pixels.length - 2*img.height - 2*(img.width-2);
 
     Edge[] edges = new Edge[lengthOut];
-    PImage output = outer.createImage(img.width-2, img.height-2, ARGB);
+    PImage output = main.createImage(img.width-2, img.height-2, ARGB);
 
     for (int row = 1; row < img.height-1; row++) {
       for (int col = 1; col < img.width-1; col++) {
@@ -333,7 +370,7 @@ static class ImageUtils {
         int ySum = 0;
         for (int kRow = -1; kRow <=1; kRow++ ) {
           for (int kCol = -1; kCol <= 1; kCol++) {
-            float grayValue = outer.red(img.pixels[(row+kRow) * img.width + (col + kCol)]);
+            float grayValue = main.red(img.pixels[(row+kRow) * img.width + (col + kCol)]);
             xSum += grayValue * xKernel[kRow+1][kCol+1];
             ySum += grayValue * yKernel[kRow+1][kCol+1];
           }
@@ -387,17 +424,7 @@ static class ImageUtils {
       }
     }
   }
-
-  static int[] plateLocation(PImage img, PApplet outer) { // the picture needs to be a canny edge picture. 
-    PImage cutImage = img.get(0, 0, img.width, img.height);
-
-  
-    
-    
-    return new int[]{0, 0, 0, 0}; // upper left x, y;  lower right x, y.
-  }
-
- static boolean localMinima(int[] a, int index) {
+  static boolean localMinima(int[] a, int index) {
     return a[index] <=  a[index-1] && a[index] <=  a[index+1];
   }
 }

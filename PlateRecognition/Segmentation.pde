@@ -79,19 +79,18 @@ static class Segmentation {  //<>//
   }
 
   static PImage preprossing(PImage plate, PApplet outer) {
+    if (plate == null) return null;
     plate.resize(700, 0);
     plate.filter(GRAY);
-    plate.filter(BLUR, 1);
-
-    //plate = ImageUtils.contrastExtension(plate,outer);
+    //plate = ImageUtils.contrastExtension(plate);
     plate = ImageUtils.filterImageByMedian(plate, outer);
     plate.resize(plate.width+1, plate.height+1);
     //println(ImageUtils.averageBrightness(plate, outer), ImageUtils.medianBrightness(plate, outer), (ImageUtils.averageBrightness(plate, outer)+ ImageUtils.medianBrightness(plate, outer))/2.0);
     //plate.filter(THRESHOLD, ); // find the average intensity to filter dynamicly insted of taking a static value
     //outer.image(plate, 0, 0);
-    plate.filter(THRESHOLD, (ImageUtils.averageBrightness(plate, outer)+ ImageUtils.medianBrightness(plate, outer))/2.0);
+    plate.filter(THRESHOLD, (ImageUtils.averageBrightness(plate)+ ImageUtils.medianBrightness(plate))/2.0);
     //outer.image(plate, 0, 250);
-    plate = ImageUtils.cropBorders(plate, outer);
+    plate = ImageUtils.cropBorders(plate);
 
 
     return plate;
@@ -101,7 +100,7 @@ static class Segmentation {  //<>//
   static ArrayList <PImage> blobSegmentation(PImage plate, PApplet outer, NeuralNetwork numberNetwork, NeuralNetwork letterNetwork, PlateRecognition main) {
     // Based on Yoon, 2011
     plate = preprossing(plate, outer);
-
+    //pic = plate;
     ArrayList <Picture> blobs = connectedComponentAnalysis(plate, outer);
 
     ArrayList <Picture> nonCharBlobs = new ArrayList <Picture>();
@@ -111,11 +110,20 @@ static class Segmentation {  //<>//
     }
 
     blobs.removeAll(nonCharBlobs);
+    if (blobs.size()==0) {
+      ArrayList<PImage> arr = new ArrayList<PImage>();
+      arr.add(plate);
+      return arr;
+    }
     blobs = blobSplit(blobs, plate, outer);
 
     //blobs = blobSplit(blobs, outer);
-    blobs = doubleLineSort(plate, blobs, outer);
+    Collections.sort(blobs); 
+    //blobs = doubleLineSort(plate, blobs, outer);
 
+
+
+    //println("hello2");
     //int k = 4;
     //isCharacterImage(blobs.get(k), plate, outer);
     //outer.image(blobs.get(k).img, 0, 0);
@@ -150,10 +158,11 @@ static class Segmentation {  //<>//
 
       confidences.add(Math.max(numberConfidence[1], letterConfidence[1]));
     }
-    
+
     while (output.size()>7) {  
       double[] confidencesa = new double[confidences.size()];
       for (int i = 0; i<confidences.size(); i++) confidencesa[i] = (double) confidences.get(i);
+
       output.remove(main.getIndexOfSmallest(confidencesa));
       confidences.remove(main.getIndexOfSmallest(confidencesa));
     }
@@ -181,6 +190,7 @@ static class Segmentation {  //<>//
 
     return lessHalf && fourTop;
   }
+
 
   static ArrayList <Picture> doubleLineSort(PImage plate, ArrayList <Picture> blobs, PApplet outer) {
     if (!isDoubleLine(plate, blobs, outer)) {
@@ -271,7 +281,7 @@ static class Segmentation {  //<>//
 
 
     // rule 4, Blobs at the corners of the image
-    int[] massCenter = ImageUtils.computeCenterOfMass(blob.img, outer);
+    int[] massCenter = ImageUtils.computeCenterOfMass(blob.img);
 
     if (massCenter[0] < 0.015*originalPlate.width && massCenter[1] < 0.015 *originalPlate.height) return false;
     if (massCenter[0] < 0.015*originalPlate.width && massCenter[1] > 0.985 *originalPlate.height) return false;
@@ -320,7 +330,7 @@ static class Segmentation {  //<>//
         queue.add(0, i);
         while (queue.size()>0) {
           int index = queue.pop(); // return the element and removes it from the list
-          for (int j = index>plate.width ? -plate.width: 0; j<= (index<pix.length-plate.width ? plate.width: 0); j+= plate.width) { // this is not horror :)
+          for (int j = index>plate.width ? -plate.width: 0; j<= (index<pix.length-plate.width ? plate.width: 0); j+= plate.width) { // check in eight direction unless at the edges
             for (int k = index%plate.width >0 ? -1: 0; k<= (index%plate.width < plate.width-1 ? 1: 0 ); k++) {
               if (pix[index+j+k].isBlack()&& pix[index+j+k].label == 0) {
                 pix[index+j+k].label = currentLabel;
@@ -392,28 +402,32 @@ static class Segmentation {  //<>//
     }
     return new int[] {min, max};
   }
+}
 
-  static class Picture implements Comparable<Picture> {
-    PImage img;
-    int[] boundingBox;
-    int[] center;
-    Picture(PImage _img, int[] boundingBox) {
-      this.img = _img;
-      this.boundingBox = boundingBox;
-      this.center = this.center();
-    }
-    Picture() {
-    }
+static class Picture implements Comparable<Picture> {
+  PImage img;
+  int[] boundingBox;
+  int[] center;
+  int width;
+  int height;
+  Picture(PImage _img, int[] boundingBox) {
+    this.img = _img;
+    this.boundingBox = boundingBox;
+    this.width = boundingBox[2]-boundingBox[0];
+    this.height = boundingBox[3]-boundingBox[1];
+    this.center = this.center();
+  }
+  Picture() {
+  }
 
-    public int compareTo(Picture other) {
-      return round(this.boundingBox[0] - other.boundingBox[0]);
-    }
+  public int compareTo(Picture other) {
+    return round(this.boundingBox[0] - other.boundingBox[0]);
+  }
 
-    private int[] center() {
-      int[] output = new int[]{0, 0};
-      output[0] = (this.boundingBox[0] + this.boundingBox[2])/2;
-      output[1] = (this.boundingBox[1] + this.boundingBox[3])/2;
-      return output;
-    }
+  private int[] center() {
+    int[] output = new int[]{0, 0};
+    output[0] = (this.boundingBox[0] + this.boundingBox[2])/2;
+    output[1] = (this.boundingBox[1] + this.boundingBox[3])/2;
+    return output;
   }
 }
