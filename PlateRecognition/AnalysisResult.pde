@@ -18,8 +18,6 @@ class AnalysisResult {
   @Override
   String toString() {
     long time = processingTime /1000000;
-
-    
     String form = "Success: %b, Success %%: %s, Expected plate: %s, Found plate: %s, Time: %d ms";
     return String.format(form, analysisCorrect(), error(), expectedName, foundName, time);
   }
