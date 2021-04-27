@@ -1,5 +1,4 @@
-static class Segmentation {  //<>//
-
+static class Segmentation {  //<>// //<>//
   static PImage preprossing(PImage plate) {
     if (plate == null) return null;
     plate.resize(700, 0);
@@ -136,9 +135,6 @@ static class Segmentation {  //<>//
 
     return true;
   }
-
-
-
 
   static int countBlackPix(PImage img, PApplet outer) {
     int sum = 0; 
