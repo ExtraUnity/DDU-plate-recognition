@@ -1,68 +1,57 @@
-import java.io.*;  //<>//
+import java.io.Serializable; //<>//
+import java.io.FileOutputStream;
+import java.io.FileInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectInputStream;
 import java.util.LinkedList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Random;
-import java.util.Arrays;
-import java.lang.Object;
-import java.util.*;
-import java.lang.*;
 
 DataSet trainingLettersSet;
 DataSet testingLettersSet;
 DataSet trainingDigitsSet;
 DataSet testingDigitsSet;
 ArrayList<Button> buttons;
-static PImage pic;
 ArrayList<AnalysisResult> results = new ArrayList<AnalysisResult>();
 static PApplet p = new PApplet();
 
 ArrayList<PVector> points;
 double[] drawNum;
 
-int debugCounter = 0; 
-
 void setup() {
-  size(900, 700);
+  size(700, 600);
   surface.setTitle("Automatic Number Plate Recognition System");
-  pic = null;
-  NeuralNetwork numberNet;
-  NeuralNetwork letterNet;
   ImageUtils.main = this;
-  String path = dataPath("");
   buttons = new ArrayList<Button>();
 
-  //background(0);
-
-
   try {
-    buttons.add(new Button(800, 250, 100, 30, "Select a file"));
-    buttons.add(new Button(800, 400, 100, 30, "Test program"));
-    letterNet = NeuralNetwork.loadNetwork(path + "\\networks\\letterNet.txt");
-    numberNet = NeuralNetwork.loadNetwork(path + "\\networks\\numberNet.txt");
-
-    //letterNet = new NeuralNetwork(784, 600, 400, 300, 300, 100, 27);
-    //numberNet = new NeuralNetwork(784, 300, 100, 10);
-
-    //long time = System.nanoTime();
-    //println(">>>Creating training sets<<<");
-    //trainingDigitsSet = createSet(path + "\\trainingImages\\numbers", 100000, 784, 10, 200); 
-    //trainingLettersSet = createSet(path + "\\trainingImages\\letters", 100000, 784, 27, 200); 
-    //println(">>>Training sets created<<<");
-    //println(">>>Creating testing sets<<<");
-    //testingDigitsSet = createSet(path + "\\trainingImages\\numbers", 50000, 784, 1, 500);
-    //testingLettersSet = createSet(path + "\\trainingImages\\letters", 50000, 784, 1, 200);
-    //println(">>>Testing set created<<<");
-    //println(">>>Final time: " + (System.nanoTime()-time)/1000000 + "ms<<<");
-
-
-    //trainData(50, 50, 1200, "numberNet", 5, trainingDigitsSet, testingDigitsSet, numberNet);
-    //testData(numberNet, testingDigitsSet);
-    //trainData(50, 50, 1200, "letterNet", 5, trainingLettersSet, testingLettersSet, letterNet);
-    //testData(letterNet, testingLettersSet);
-
-
-    background(255);
+    buttons.add(new Button(width/2-150, 450, 150, 30, "Select a file"));
+    buttons.add(new Button(width/2+50, 450, 150, 30, "Test program"));
+    buttons.add(new Button(width/2-150, 500, 350, 30, "Export current picture"));
+    buttons.add(new Button(width/2-150, 550, 350, 30, "Open configuration file"));
+    
+    /*
+    NeuralNetwork letterNet = new NeuralNetwork(784, 600, 400, 300, 300, 100, 27);
+    NeuralNetwork numberNet = new NeuralNetwork(784, 300, 100, 10);
+    String path = dataPath("");
+    long time = System.nanoTime();
+    println(">>>Creating training sets<<<");
+    trainingDigitsSet = createSet(path + "\\trainingImages\\numbers", 100000, 784, 10, 200); 
+    trainingLettersSet = createSet(path + "\\trainingImages\\letters", 100000, 784, 27, 200); 
+    println(">>>Training sets created<<<");
+    println(">>>Creating testing sets<<<");
+    testingDigitsSet = createSet(path + "\\trainingImages\\numbers", 50000, 784, 1, 500);
+    testingLettersSet = createSet(path + "\\trainingImages\\letters", 50000, 784, 1, 200);
+    println(">>>Testing set created<<<");
+    println(">>>Final time: " + (System.nanoTime()-time)/1000000 + "ms<<<");
+    
+    
+    trainData(50, 50, 1200, "numberNet", 5, trainingDigitsSet, testingDigitsSet, numberNet);
+    testData(numberNet, testingDigitsSet);
+    trainData(50, 50, 1200, "letterNet", 5, trainingLettersSet, testingLettersSet, letterNet);
+    testData(letterNet, testingLettersSet);
+    */
   }
   catch(Exception e) {
     println(e);
@@ -70,29 +59,29 @@ void setup() {
 }
 
 void draw() {
+  background(200);
   for (Button b : buttons) b.render();
   try {
-    image(pic,0,0);
-    results.get(0).renderPictures();
-    //background(255);
-    //results.get(0).renderPictures();
-
-    //noLoop();
-  } 
-  catch(Exception e) {
-    //println(e);
-  }
+    results.get(results.size()-1).renderPictures();
+  } catch(Exception e) {}
 }
 
 void mousePressed() {
-  if (buttons.get(0).pressed()) selectFile();
-  else if (buttons.get(1).pressed()) {
+  if (buttons.get(0).pressed()) selectFile();//select file button
+  else if (buttons.get(1).pressed()) {//test program button
     String path = dataPath("") + "\\plates";
     results = testPlates(path);
+  } else if (buttons.get(2).pressed()) {//export picture button
+    AnalysisResult car = results.get(results.size()-1);
+    exportPicture(car.originalImage, car.foundName);
+  } else if (buttons.get(3).pressed()) {//open config button
+    String path = sketchPath()+"\\config.ini";
+    launch(path);
   }
 }
 
 void exportPicture(PImage plate, String fileName) {
+  if (fileName=="") fileName = String.valueOf(System.currentTimeMillis());
   String path = dataPath("") + "\\exports\\"+fileName+".jpg";
   plate.save(path);
 }
@@ -139,7 +128,7 @@ AnalysisResult analyseImage(File selection) {
   long time = 0; 
   Picture plate = null;
   ArrayList <PImage> segmentedPictures = null;
-  String foundName = null;
+  String foundName = "";
   String format = "AA00000";
   String textColor = "black";
 
@@ -154,11 +143,13 @@ AnalysisResult analyseImage(File selection) {
       }
     }
     time = System.nanoTime();
-    plate = plateLocalisation(mainPicture, textColor, numberNet, letterNet);
-    if (plate == null) return null;
-    segmentedPictures = Segmentation.blobSegmentation(plate.img, numberNet, letterNet, this);
-    if (segmentedPictures == null) return null;
-    foundName = recognizeImages(segmentedPictures, numberNet, letterNet, format);
+    plate = plateLocalisation(mainPicture, textColor, numberNet, letterNet, format);
+    if (plate != null) {
+      segmentedPictures = Segmentation.blobSegmentation(plate.img, numberNet, letterNet, this, format);
+    }
+    if (segmentedPictures != null) {
+      foundName = recognizeImages(segmentedPictures, numberNet, letterNet, format);
+    }
     time = System.nanoTime() - time;
   } 
   catch(Exception e) {
@@ -409,17 +400,15 @@ static int[] getRandomValues(int lower, int upper, int size) {
 
 static boolean containsValue(int[] a, int n) {
   if (a == null) return false;
-  for (int i : a) {
-    if (i==n) return true;
-  }
+  for (int i : a) if (i==n) return true;
   return false;
 }
 
-Picture plateLocalisation(PImage orgImg, String textColor, NeuralNetwork numberNet, NeuralNetwork letterNet) {
-  return plateLocalisation(orgImg, 0.005, 0.2, 0.3, 1.5, 6, textColor, numberNet, letterNet);
+Picture plateLocalisation(PImage orgImg, String textColor, NeuralNetwork numberNet, NeuralNetwork letterNet, String format) {
+  return plateLocalisation(orgImg, 0.005, 0.2, 0.3, 1.5, 6, textColor, numberNet, letterNet, format);
 }
 
-Picture plateLocalisation(PImage orgImg, double minArea, double maxArea, double percentBlack, double aspectLow, double aspectHigh, String textColor, NeuralNetwork numberNet, NeuralNetwork letterNet) {
+Picture plateLocalisation(PImage orgImg, double minArea, double maxArea, double percentBlack, double aspectLow, double aspectHigh, String textColor, NeuralNetwork numberNet, NeuralNetwork letterNet, String format) {
   orgImg.resize(700, 0);
   int orgImgHeight = orgImg.height;
   orgImg = orgImg.get(0, orgImg.height/3, orgImg.width, 2*orgImg.height/3);
@@ -430,11 +419,11 @@ Picture plateLocalisation(PImage orgImg, double minArea, double maxArea, double 
   //println(ImageUtils.medianBrightness(blurImg), ImageUtils.averageBrightness(blurImg));
   blurImg.filter(THRESHOLD, 0.62);
   if (textColor.equals("black")) blurImg.filter(INVERT);   
-  
-  pic = blurImg;
-  
+
   ArrayList<Picture> components = Segmentation.connectedComponentAnalysis(blurImg, this);
+
   ArrayList<Picture> removes = new ArrayList<Picture>();
+
   for (int i = 0; i<components.size(); i++) {
     Picture p = components.get(i);
     if (componentTooSmall(p, blurImg, minArea) || foregroundAreaTooSmall(p, percentBlack) || aspectIntervalWrong(p, aspectLow, aspectHigh) || componentTooBig(p, blurImg, maxArea)) {
@@ -446,7 +435,7 @@ Picture plateLocalisation(PImage orgImg, double minArea, double maxArea, double 
   if (components.size()>1) {
     removes = new ArrayList<Picture>();
     for (Picture p : components) {
-      if (Segmentation.blobSegmentation(orgImg.get(p.boundingBox[0], p.boundingBox[1], p.width, p.height), numberNet, letterNet, this).size()<6) {
+      if (Segmentation.blobSegmentation(orgImg.get(p.boundingBox[0], p.boundingBox[1], p.width, p.height), numberNet, letterNet, this, format).size()<format.length()-1) {
         //println(Segmentation.blobSegmentation(p.img,this,numberNet,letterNet,this).size());
         removes.add(p);
       }

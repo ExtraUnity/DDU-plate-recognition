@@ -27,7 +27,7 @@ static class ImageUtils {
     int random = (int)main.random(0, maxAmount); //random amount of dots
     for (int i = 0; i<random; i++) {
 
-      newImg.pixels[(int)main.random(0, newImg.pixels.length)] = main.alphaToPixel((main.random(0, 1)>0.7 ? 255 : 0)); //70% black dots
+      newImg.pixels[(int)main.random(0, newImg.pixels.length)] = col((main.random(0, 1)>0.7 ? 255 : 0)); //70% black dots
     }
 
     return newImg;
@@ -153,7 +153,7 @@ static class ImageUtils {
           }
         }
 
-        newImg.pixels[(startY)*newImg.width+(startX)] = main.alphaToPixel(median(imgMatrix));
+        newImg.pixels[(startY)*newImg.width+(startX)] = col(median(imgMatrix));
       }
     }
     newImg.filter(INVERT);
@@ -181,5 +181,9 @@ static class ImageUtils {
       sum += main.red(img.pixels[i]);
     }
     return (sum/img.pixels.length)/255.0;
+  }
+  
+  static int col(int gray) {
+   return 0xff000000 | (gray << 16) | (gray << 8) | gray; 
   }
 }

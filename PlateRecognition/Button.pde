@@ -37,7 +37,7 @@ class Button {
     fill(80);
     if (hovered()) fill(120); 
     strokeWeight(1);
-
+    stroke(0);
     rect(pos.x, pos.y, sizeX, sizeY);
 
     fill(textColor);

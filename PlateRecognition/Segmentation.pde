@@ -13,7 +13,7 @@ static class Segmentation {  //<>//
   }
 
 
-  static ArrayList <PImage> blobSegmentation(PImage plate, NeuralNetwork numberNetwork, NeuralNetwork letterNetwork, PlateRecognition main) {
+  static ArrayList <PImage> blobSegmentation(PImage plate, NeuralNetwork numberNetwork, NeuralNetwork letterNetwork, PlateRecognition main, String format) {
     // Based on Yoon, 2011
     plate = preprossing(plate);
     ArrayList <Picture> blobs = connectedComponentAnalysis(plate, main);
@@ -48,7 +48,7 @@ static class Segmentation {  //<>//
       confidences.add(Math.max(numberConfidence[1], letterConfidence[1]));
     }
 
-    while (output.size()>7) {  
+    while (output.size()>format.length()) {  
       double[] confidencesa = new double[confidences.size()];
       for (int i = 0; i<confidences.size(); i++) confidencesa[i] = (double) confidences.get(i);
 
@@ -159,6 +159,7 @@ static class Segmentation {  //<>//
         return col == 0;
       }
     }
+
     Pixel[] pix = new Pixel[plate.pixels.length];
     for (int i = 0; i<pix.length; i++) {
       pix[i] = new Pixel((int)outer.red(plate.pixels[i]), 0);
@@ -210,12 +211,13 @@ static class Segmentation {  //<>//
       PImage kBlob = outer.createImage(plate.width, plate.height, ALPHA);
 
       for (int i = 0; i<kBlob.pixels.length; i++) {
-        if (pix[i].label == k) kBlob.pixels[i] = ImageUtils.main.alphaToPixel(0);
-        else kBlob.pixels[i] = ImageUtils.main.alphaToPixel(255);
+        if (pix[i].label == k) kBlob.pixels[i] = ImageUtils.col(0);
+        else kBlob.pixels[i] = ImageUtils.col(255);
       }
 
       PImage temp = outer.createImage((boundingBox[2]- boundingBox[0]), (boundingBox[3]- boundingBox[1]), ALPHA);
       boundingBoxes.add(boundingBox);
+
       temp.copy(kBlob, boundingBox[0], boundingBox[1], temp.width, temp.height, 0, 0, temp.width, temp.height); 
       allBlob.add(temp);
     }
