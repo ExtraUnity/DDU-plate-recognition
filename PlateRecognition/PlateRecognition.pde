@@ -18,35 +18,35 @@ static PApplet p = new PApplet();
 
 ArrayList<PVector> points;
 double[] drawNum;
-
+boolean loading = false;
 void setup() {
   size(700, 600);
   surface.setTitle("Automatic Number Plate Recognition System");
   ImageUtils.main = this;
   buttons = new ArrayList<Button>();
-
   try {
-    buttons.add(new Button(width/2-150, 450, 150, 30, "Select a file"));
-    buttons.add(new Button(width/2+50, 450, 150, 30, "Test program"));
-    buttons.add(new Button(width/2-150, 500, 350, 30, "Export current picture"));
-    buttons.add(new Button(width/2-150, 550, 350, 30, "Open configuration file"));
-    
+    buttons.add(new Button(width/2-175, 450, 150, 30, "Select a file"));
+    buttons.add(new Button(width/2+25, 450, 150, 30, "Test program"));
+    buttons.add(new Button(width/2-175, 500, 350, 30, "Export current picture"));
+    buttons.add(new Button(width/2-175, 550, 350, 30, "Open configuration file"));
+
     /*
     NeuralNetwork letterNet = new NeuralNetwork(784, 600, 400, 300, 300, 100, 27);
-    NeuralNetwork numberNet = new NeuralNetwork(784, 300, 100, 10);
+    NeuralNetwork numberNet = new NeuralNetwork(784, 300, 100, 11);
     String path = dataPath("");
     long time = System.nanoTime();
     println(">>>Creating training sets<<<");
-    trainingDigitsSet = createSet(path + "\\trainingImages\\numbers", 100000, 784, 10, 200); 
-    trainingLettersSet = createSet(path + "\\trainingImages\\letters", 100000, 784, 27, 200); 
+
+    trainingLettersSet = createSet(path + "\\trainingImages\\letters", 100000, 784, 27, 500); 
+    trainingDigitsSet = createSet(path + "\\trainingImages\\numbers", 50000, 784, 11, 500); 
     println(">>>Training sets created<<<");
     println(">>>Creating testing sets<<<");
-    testingDigitsSet = createSet(path + "\\trainingImages\\numbers", 50000, 784, 1, 500);
-    testingLettersSet = createSet(path + "\\trainingImages\\letters", 50000, 784, 1, 200);
+    testingDigitsSet = createSet(path + "\\trainingImages\\numbers", 100000, 784, 1, 500);
+    testingLettersSet = createSet(path + "\\trainingImages\\letters", 50000, 784, 1, 500);
     println(">>>Testing set created<<<");
     println(">>>Final time: " + (System.nanoTime()-time)/1000000 + "ms<<<");
-    
-    
+
+
     trainData(50, 50, 1200, "numberNet", 5, trainingDigitsSet, testingDigitsSet, numberNet);
     testData(numberNet, testingDigitsSet);
     trainData(50, 50, 1200, "letterNet", 5, trainingLettersSet, testingLettersSet, letterNet);
@@ -62,15 +62,22 @@ void draw() {
   background(200);
   for (Button b : buttons) b.render();
   try {
-    results.get(results.size()-1).renderPictures();
-  } catch(Exception e) {}
+    if (!loading) results.get(results.size()-1).renderPictures();
+  } 
+  catch(Exception e) {
+  }
+  if (loading) {
+    fill(0);
+    text("ANALYSING PICTURE...", width/2, 250);
+  }
 }
 
+
 void mousePressed() {
-  if (buttons.get(0).pressed()) selectFile();//select file button
-  else if (buttons.get(1).pressed()) {//test program button
-    String path = dataPath("") + "\\plates";
-    results = testPlates(path);
+  if (buttons.get(0).pressed()) {
+    selectFile();//select file button
+  } else if (buttons.get(1).pressed()) {//test program button
+    thread("testPlates");
   } else if (buttons.get(2).pressed()) {//export picture button
     AnalysisResult car = results.get(results.size()-1);
     exportPicture(car.originalImage, car.foundName);
@@ -90,6 +97,11 @@ void selectFile() {
   selectInput("Select a file to process:", "fileSelected");
 }
 
+ArrayList<AnalysisResult> testPlates() {
+  String path = dataPath("") + "\\plates";
+  return testPlates(path);
+}
+
 ArrayList<AnalysisResult> testPlates(String path) {
   ArrayList<AnalysisResult> output = new ArrayList<AnalysisResult>();
   String[] plateNames = listFileNames(path);
@@ -99,6 +111,7 @@ ArrayList<AnalysisResult> testPlates(String path) {
     AnalysisResult car = analyseImage(location);
     if (car == null) car = new AnalysisResult(s.substring(0, s.length()-4), "", 0, null, null, null);
     output.add(car);
+    results.add(car);
     println(car.toString());
     if (car.analysisCorrect()) correct++;
   }
@@ -111,7 +124,6 @@ AnalysisResult analyseImage(File selection) {
   String expectedName = selection.getName().replace(".jpg", "");
   PImage mainPicture = loadImage(selection.getAbsolutePath());
   String path = dataPath("");
-  mainPicture = loadImage(path+ "\\plates\\"+selection.getName());
 
   NeuralNetwork letterNet = null; 
   NeuralNetwork numberNet = null; 
@@ -150,6 +162,7 @@ AnalysisResult analyseImage(File selection) {
     if (segmentedPictures != null) {
       foundName = recognizeImages(segmentedPictures, numberNet, letterNet, format);
     }
+    if (foundName=="" || plate == null || segmentedPictures == null) foundName="No plate found";
     time = System.nanoTime() - time;
   } 
   catch(Exception e) {
@@ -164,8 +177,11 @@ void fileSelected(File selection) {
   } else if (!selection.getName().endsWith("jpg") && !selection.getName().endsWith("png")) {
     println("Wrong file format: Only .jpg and .png are supported");
   } else {
+    loading=true;
+    print();
     results.add(analyseImage(selection));
   }
+  loading=false;
 }
 
 DataSet createSet(String path, int amount, int inputLength, int outputLength, int maxDots) {
@@ -252,7 +268,7 @@ double[] useNeuralNetwork(PImage _img, NeuralNetwork network) {
 
 // https://stackoverflow.com/questions/10813154/how-do-i-convert-a-number-to-a-letter-in-java
 String getCharForNumber(int i) {
-  return i > 0 && i < 27 ? String.valueOf((char)(i + 64)) : null;
+  return i >= 0 && i < 27 ? String.valueOf((char)(i + 64)) : null;
 }
 
 int getNumberForChar(char c) {
@@ -284,8 +300,6 @@ void trainData(int epochs, int loops, int batch_size, String file, int stopThres
       wrongTurns++;
       if (wrongTurns == 0 || wrongTurns == stopThreshold) {//Early stopping to prevent overfitting
         println("stopping training");
-
-        net.saveNetwork(path + "\\networks\\" + file + ".txt");
         break;
       }
     } else {
@@ -377,16 +391,6 @@ int alphaToPixel(int gray) {
   return color(gray);
 }
 
-//static double[] rotateArrayQuarter(double[] arr, int arrWidth, int arrHeight) {
-//  double[] output = new double[arr.length];
-//  for (int col = arrWidth-1; col>=0; col--) {
-//    for (int row = 0; row<arrHeight; row++) {
-//      output[(arrWidth-1-col)*arrWidth+row] = arr[arr.length + col - arrWidth*(arrHeight-row)];
-//    }
-//  }
-//  return output;
-//}
-
 static int[] getRandomValues(int lower, int upper, int size) {
   Random indexGenerator = new Random();
   int[] is = new int[size];
@@ -473,5 +477,5 @@ boolean aspectIntervalWrong(Picture p, double lower, double upper) {
 
 
 boolean isAlphabetical(String c) {
-  return c.matches("[a-zA-Z]+"); //taken from https://stackoverflow.com/questions/5238491/check-if-string-contains-only-letters/29836318
+  return c.matches("[a-zA-\\[]+"); //taken from https://stackoverflow.com/questions/5238491/check-if-string-contains-only-letters/29836318
 }

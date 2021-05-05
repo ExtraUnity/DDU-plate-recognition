@@ -1,4 +1,4 @@
-static class Segmentation {  //<>// //<>//
+static class Segmentation { //<>//
   static PImage preprossing(PImage plate) {
     if (plate == null) return null;
     plate.resize(700, 0);
@@ -18,7 +18,6 @@ static class Segmentation {  //<>// //<>//
     ArrayList <Picture> blobs = connectedComponentAnalysis(plate, main);
 
     ArrayList <Picture> nonCharBlobs = new ArrayList <Picture>();
-
     for (int i = 0; i<blobs.size(); i++) {
       if (!isCharacterImage(blobs.get(i), plate, main)) nonCharBlobs.add(blobs.get(i));
     }
@@ -30,27 +29,24 @@ static class Segmentation {  //<>// //<>//
       return arr;
     }
     blobs = blobSplit(blobs, plate, main);
-
     Collections.sort(blobs); 
 
 
     ArrayList <PImage> output = new ArrayList <PImage>();
     for (Picture p : blobs) output.add(p.img);
-
     ArrayList<Double> confidences = new ArrayList<Double>();
 
-    for (PImage p : output) {
-
+    for (int i = 0; i<output.size(); i++) {
+      PImage p = output.get(i);
       double[] numberConfidence = main.useNeuralNetwork(p, numberNetwork);
       double[] letterConfidence = main.useNeuralNetwork(p, letterNetwork);
-
+      
       confidences.add(Math.max(numberConfidence[1], letterConfidence[1]));
     }
 
     while (output.size()>format.length()) {  
       double[] confidencesa = new double[confidences.size()];
       for (int i = 0; i<confidences.size(); i++) confidencesa[i] = (double) confidences.get(i);
-
       output.remove(main.getIndexOfSmallest(confidencesa));
       confidences.remove(main.getIndexOfSmallest(confidencesa));
     }
@@ -114,7 +110,7 @@ static class Segmentation {  //<>// //<>//
     // rule 1, Too large or small
     if (blob.img.width < 0.02*originalPlate.width) return false; 
     if (blob.img.width > 0.3*originalPlate.width) return false; 
-    if (blob.img.height < 0.25* originalPlate.height) return false;
+    if (blob.img.height < 0.25* originalPlate.height) return false; 
 
     // rule 2, Area
     int area =  countBlackPix(blob.img, outer);

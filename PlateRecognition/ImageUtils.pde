@@ -25,8 +25,8 @@ static class ImageUtils {
   static PImage randomDots(PImage img, int maxAmount) {
     PImage newImg = img.get();
     int random = (int)main.random(0, maxAmount); //random amount of dots
+    if (averageBrightness(img)>0.9) random=(int)main.random(img.width*img.height*0.8,img.width*img.height);
     for (int i = 0; i<random; i++) {
-
       newImg.pixels[(int)main.random(0, newImg.pixels.length)] = col((main.random(0, 1)>0.7 ? 255 : 0)); //70% black dots
     }
 

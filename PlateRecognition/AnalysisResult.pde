@@ -59,16 +59,22 @@ class AnalysisResult {
   void renderPictures(int spacing) {
 
     image(this.originalImage, width/2-this.originalImage.width/2, 0);
-
+    if(this.foundName=="No plate found") {
+      fill(0);
+      text(this.foundName,width/2,this.originalImage.height+35);
+    }
     for (int i = 0; i < this.segmented.size(); i++) {
       if(this.segmented.get(i).height>100) this.segmented.get(i).resize(0,100);
       
-      image(this.segmented.get(i), i*spacing, this.originalImage.height+40);
+      image(this.segmented.get(i), (i+0.5)*spacing, this.originalImage.height+40);
       fill(0);
       textSize(36);
       textAlign(CORNER);
-      text(this.foundName.charAt(i), i*spacing, this.originalImage.height+35);
+      
+      if(this.foundName!="No plate found")text(this.foundName.charAt(i), (i+0.5)*spacing, this.originalImage.height+35);
     }
+    
+
 
     strokeWeight(3);
     stroke(0, 255, 0);
