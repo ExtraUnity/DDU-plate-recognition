@@ -4,21 +4,24 @@ class Button {
   String text;
   color textColor;
   int rounded;
-  Button(int x, int y, int sizeX, int sizeY, String text) {
-    this(x, y, sizeX, sizeY, text, color(255, 255, 255),0);
+  boolean isEssential;
+  
+  Button(int x, int y, int sizeX, int sizeY, String text, boolean isEssential) {
+    this(x, y, sizeX, sizeY, text, color(255, 255, 255),0,isEssential);
   }
   
-  Button(int x, int y, int sizeX, int sizeY, String text, color textColor) {
-    this(x, y, sizeX, sizeY, text, textColor,0);
+  Button(int x, int y, int sizeX, int sizeY, String text, color textColor, boolean isEssential) {
+    this(x, y, sizeX, sizeY, text, textColor,0,isEssential);
   }
 
-  Button(int x, int y, int sizeX, int sizeY, String text, color textColor, int rounded) {
+  Button(int x, int y, int sizeX, int sizeY, String text, color textColor, int rounded, boolean isEssential) {
     pos = new PVector(x, y);
     this.sizeX = sizeX;
     this.sizeY = sizeY;
     this.text = text;
     this.textColor = textColor;
     this.rounded = rounded;
+    this.isEssential = isEssential;
   }
 
   boolean pressed() {
@@ -35,7 +38,7 @@ class Button {
 
   void render() {
     fill(80);
-    if (hovered()) fill(120); 
+    if (hovered() && (isEssential || !isTesting)) fill(120); 
     strokeWeight(1);
     stroke(0);
     rect(pos.x, pos.y, sizeX, sizeY);

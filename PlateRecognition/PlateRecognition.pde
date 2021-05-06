@@ -19,39 +19,40 @@ static PApplet p = new PApplet();
 ArrayList<PVector> points;
 double[] drawNum;
 boolean loading = false;
+boolean isTesting = false;
 void setup() {
   size(700, 600);
   surface.setTitle("Automatic Number Plate Recognition System");
   ImageUtils.main = this;
   buttons = new ArrayList<Button>();
   try {
-    buttons.add(new Button(width/2-175, 450, 150, 30, "Select a file"));
-    buttons.add(new Button(width/2+25, 450, 150, 30, "Test program"));
-    buttons.add(new Button(width/2-175, 500, 350, 30, "Export current picture"));
-    buttons.add(new Button(width/2-175, 550, 350, 30, "Open configuration file"));
-
+    buttons.add(new Button(width/2-175, 450, 150, 30, "Select a file", false));
+    buttons.add(new Button(width/2+25, 450, 150, 30, "Test program", false));
+    buttons.add(new Button(width/2-175, 500, 350, 30, "Export current picture", true));
+    buttons.add(new Button(width/2-175, 550, 350, 30, "Open configuration file", true));
+    buttons.add(new Button(width/2+250, 25, 75, 30, "About", true));
     /*
     NeuralNetwork letterNet = new NeuralNetwork(784, 600, 400, 300, 300, 100, 27);
-    NeuralNetwork numberNet = new NeuralNetwork(784, 300, 100, 11);
-    String path = dataPath("");
-    long time = System.nanoTime();
-    println(">>>Creating training sets<<<");
-
-    trainingLettersSet = createSet(path + "\\trainingImages\\letters", 100000, 784, 27, 500); 
-    trainingDigitsSet = createSet(path + "\\trainingImages\\numbers", 50000, 784, 11, 500); 
-    println(">>>Training sets created<<<");
-    println(">>>Creating testing sets<<<");
-    testingDigitsSet = createSet(path + "\\trainingImages\\numbers", 100000, 784, 1, 500);
-    testingLettersSet = createSet(path + "\\trainingImages\\letters", 50000, 784, 1, 500);
-    println(">>>Testing set created<<<");
-    println(">>>Final time: " + (System.nanoTime()-time)/1000000 + "ms<<<");
-
-
-    trainData(50, 50, 1200, "numberNet", 5, trainingDigitsSet, testingDigitsSet, numberNet);
-    testData(numberNet, testingDigitsSet);
-    trainData(50, 50, 1200, "letterNet", 5, trainingLettersSet, testingLettersSet, letterNet);
-    testData(letterNet, testingLettersSet);
-    */
+     NeuralNetwork numberNet = new NeuralNetwork(784, 300, 100, 11);
+     String path = dataPath("");
+     long time = System.nanoTime();
+     println(">>>Creating training sets<<<");
+     
+     trainingLettersSet = createSet(path + "\\trainingImages\\letters", 100000, 784, 27, 500); 
+     trainingDigitsSet = createSet(path + "\\trainingImages\\numbers", 50000, 784, 11, 500); 
+     println(">>>Training sets created<<<");
+     println(">>>Creating testing sets<<<");
+     testingDigitsSet = createSet(path + "\\trainingImages\\numbers", 100000, 784, 1, 500);
+     testingLettersSet = createSet(path + "\\trainingImages\\letters", 50000, 784, 1, 500);
+     println(">>>Testing set created<<<");
+     println(">>>Final time: " + (System.nanoTime()-time)/1000000 + "ms<<<");
+     
+     
+     trainData(50, 50, 1200, "numberNet", 5, trainingDigitsSet, testingDigitsSet, numberNet);
+     testData(numberNet, testingDigitsSet);
+     trainData(50, 50, 1200, "letterNet", 5, trainingLettersSet, testingLettersSet, letterNet);
+     testData(letterNet, testingLettersSet);
+     */
   }
   catch(Exception e) {
     println(e);
@@ -74,25 +75,40 @@ void draw() {
 
 
 void mousePressed() {
-  if (buttons.get(0).pressed()) {
-    selectFile();//select file button
-  } else if (buttons.get(1).pressed()) {//test program button
-    thread("testPlates");
-  } else if (buttons.get(2).pressed() && results.size()>0) {//export picture button
-    AnalysisResult car = results.get(results.size()-1);
-    exportPicture(car.originalImage, car.foundName);
+  if (buttons.get(2).pressed() && results.size()>0) {//export picture button
+    exportPicture();
   } else if (buttons.get(3).pressed()) {//open config button
     String path = sketchPath()+"\\config.ini";
     launch(path);
+  } else if (buttons.get(4).pressed()) {
+    String path = sketchPath();
+    path = path.substring(0, path.lastIndexOf("\\")+1)+"README.md";
+    launch(path);
+  }
+  if (isTesting) return;
+  if (buttons.get(0).pressed()) {
+    selectFile();//select file button
+  } else if (buttons.get(1).pressed()) {//test program button
+    isTesting=true;
+    thread("testPlates");
   }
 }
 
-void exportPicture(PImage plate, String fileName) {
-  if (fileName=="") fileName = String.valueOf(System.currentTimeMillis());
-  String path = dataPath("") + "\\exports\\"+fileName+".jpg";
-  plate.save(path);
+void exportPicture() {
+  selectFolder("Select a place to store the picture", "folderSelected");
 }
 
+void folderSelected(File selection) {
+  if (selection == null) {
+    println("Window was closed or the user hit cancel");
+  } else {
+    AnalysisResult car = results.get(results.size()-1);
+    PImage img = car.originalImage;
+    String fileName = car.foundName;
+    if (fileName.equals("No plate found")) fileName = String.valueOf(System.currentTimeMillis());
+    img.save(selection.getAbsolutePath()+"\\"+fileName);
+  }
+}
 void selectFile() {
   selectInput("Select a file to process:", "fileSelected");
 }
@@ -116,7 +132,7 @@ ArrayList<AnalysisResult> testPlates(String path) {
     if (car.analysisCorrect()) correct++;
   }
   println("Total accuracy: " + (double)correct/plateNames.length*100 + "%");
-
+  isTesting = false;
   return output;
 }
 
