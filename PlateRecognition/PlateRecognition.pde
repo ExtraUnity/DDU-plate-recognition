@@ -78,7 +78,7 @@ void mousePressed() {
     selectFile();//select file button
   } else if (buttons.get(1).pressed()) {//test program button
     thread("testPlates");
-  } else if (buttons.get(2).pressed()) {//export picture button
+  } else if (buttons.get(2).pressed() && results.size()>0) {//export picture button
     AnalysisResult car = results.get(results.size()-1);
     exportPicture(car.originalImage, car.foundName);
   } else if (buttons.get(3).pressed()) {//open config button
